@@ -1,0 +1,37 @@
+{
+  "cli": {
+    "version": ">= 18.3.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://lbibnwvadhtgytotcckq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_r43ng1wgQBdpGbzBBmsWzA_hMGzJzuz"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://lbibnwvadhtgytotcckq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_r43ng1wgQBdpGbzBBmsWzA_hMGzJzuz"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "mohrjdc2c@gmail.com",
+        "appleTeamId": "VJN85LZ3GQ",
+        "ascApiKeyId": "4PGQM9VX7G",
+        "ascApiKeyIssuerId": "0df9c47a-b017-4a96-b7c9-43ec768a4ca9",
+        "ascApiKeyPath": "/Users/jason/Downloads/AuthKey_4PGQM9VX7G.p8"
+      }
+    }
+  }
+}

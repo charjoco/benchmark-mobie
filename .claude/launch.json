@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "benchmark-mobile",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--ios", "--simulator", "iPhone 17 Pro Max"],
+      "port": 8081
+    }
+  ]
+}
