@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/jason/Documents/projects/athleisure-app/app/api/products/**)"
+    ],
+    "additionalDirectories": [
+      "/Users/jason/Documents/projects/athleisure-app/lib/scrapers",
+      "/Users/jason/Documents/projects/athleisure-app/lib/config",
+      "/Users/jason/Documents/projects/athleisure-app/app/api/products"
+    ]
+  }
+}

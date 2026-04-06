@@ -13,6 +13,7 @@ import {
   CormorantGaramond_400Regular,
   CormorantGaramond_600SemiBold,
 } from "@expo-google-fonts/cormorant-garamond";
+import { DancingScript_700Bold } from "@expo-google-fonts/dancing-script";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { SavedProvider } from "@/lib/SavedContext";
 import { SelectedProductProvider } from "@/lib/SelectedProductContext";
@@ -45,6 +46,7 @@ export default function RootLayout() {
     Inter_600SemiBold,
     CormorantGaramond_400Regular,
     CormorantGaramond_600SemiBold,
+    DancingScript_700Bold,
   });
 
   useEffect(() => {

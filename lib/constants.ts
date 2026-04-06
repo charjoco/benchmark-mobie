@@ -25,6 +25,7 @@ export type CategoryLabel = { key: AppCategory; label: string };
 
 export const ALL_CATEGORIES: CategoryLabel[] = [
   { key: "jackets", label: "Jackets" },
+  { key: "polos", label: "Polos" },
   { key: "shirts", label: "Shirts" },
   { key: "longsleeve", label: "Long Sleeve" },
   { key: "hoodies", label: "Hoodies" },
@@ -46,6 +47,7 @@ export const BRANDS: { key: string; label: string }[] = [
   { key: "public-rec", label: "Public Rec" },
   { key: "lululemon", label: "Lululemon" },
   { key: "ten-thousand", label: "Ten Thousand" },
+  { key: "faherty", label: "Faherty" },
   { key: "holderness-bourne", label: "Holderness & Bourne" },
   { key: "linksoul", label: "Linksoul" },
   { key: "paka", label: "Paka" },

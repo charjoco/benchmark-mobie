@@ -16,7 +16,8 @@ import { useProducts } from "@/hooks/useProducts";
 import { BRANDS, ALL_CATEGORIES } from "@/lib/constants";
 import type { AppCategory, FeedMode, FilterState, ProductRow } from "@/lib/types";
 
-const FEED_MODES: { key: FeedMode; label: string }[] = [
+const FEED_MODES: { key: FeedMode | null; label: string }[] = [
+  { key: null, label: "All" },
   { key: "drops", label: "New Drops" },
   { key: "price-drops", label: "Price Change" },
   { key: "restocks", label: "Restocks" },
@@ -31,8 +32,9 @@ export default function BrandScreen() {
 
   const brandLabel = BRANDS.find((b) => b.key === brandKey)?.label ?? (brandKey ?? "");
 
-  const [feedMode, setFeedMode] = useState<FeedMode>("drops");
+  const [feedMode, setFeedMode] = useState<FeedMode | null>("drops");
   const [category, setCategory] = useState<AppCategory | null>(null);
+  const [size, setSize] = useState<string | null>(null);
 
   const filters = useMemo<FilterState>(
     () => ({
@@ -40,12 +42,12 @@ export default function BrandScreen() {
       feedMode,
       brands: brandKey ? [brandKey] : [],
       colors: [],
-      sizes: [],
+      sizes: size ? [size] : [],
       onSale: false,
       isNew: false,
       sortBy: feedMode === "drops" ? "newest" : "lastSeenAt",
     }),
-    [category, feedMode, brandKey]
+    [category, feedMode, brandKey, size]
   );
 
   const { products, isLoading, isLoadingMore, hasMore, loadMore, refresh } =
@@ -108,6 +110,7 @@ export default function BrandScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.modeRow}
+        style={styles.scrollRow}
       >
         {FEED_MODES.map((m) => (
           <TouchableOpacity
@@ -133,6 +136,7 @@ export default function BrandScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.catRow}
+        style={styles.scrollRow}
       >
         <TouchableOpacity
           style={[styles.catBtn, category === null && styles.catBtnActive]}
@@ -167,30 +171,47 @@ export default function BrandScreen() {
         ))}
       </ScrollView>
 
-      {/* Loading indicator */}
-      {isLoading && (
-        <View style={styles.loadingRow}>
-          <ActivityIndicator color="#71717a" size="large" />
-        </View>
-      )}
+      {/* Size buttons */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.catRow}
+        style={styles.scrollRow}
+      >
+        {["S", "M", "L", "XL", "XXL"].map((s) => (
+          <TouchableOpacity
+            key={s}
+            style={[styles.catBtn, size === s && styles.catBtnActive]}
+            onPress={() => setSize(size === s ? null : s)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.catBtnText, size === s && styles.catBtnTextActive]}>
+              {s}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       {/* Product grid */}
-      {!isLoading && (
-        <FlashList
-          data={products}
-          renderItem={renderItem}
-          numColumns={2}
-          estimatedItemSize={320}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={renderEmpty}
-          ListFooterComponent={renderFooter}
-          onEndReached={hasMore ? loadMore : undefined}
-          onEndReachedThreshold={0.3}
-          onRefresh={refresh}
-          refreshing={false}
-          contentContainerStyle={styles.list}
-        />
-      )}
+      <FlashList
+        data={isLoading ? [] : products}
+        renderItem={renderItem}
+        numColumns={2}
+        estimatedItemSize={320}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={isLoading ? (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color="#71717a" size="large" />
+          </View>
+        ) : null}
+        ListEmptyComponent={renderEmpty}
+        ListFooterComponent={renderFooter}
+        onEndReached={hasMore ? loadMore : undefined}
+        onEndReachedThreshold={0.3}
+        onRefresh={refresh}
+        refreshing={false}
+        contentContainerStyle={styles.list}
+      />
     </SafeAreaView>
   );
 }
@@ -221,16 +242,18 @@ const styles = StyleSheet.create({
   },
   brandName: {
     fontFamily: "CormorantGaramond_600SemiBold",
-    fontSize: 22,
-    letterSpacing: 3,
+    fontSize: 20,
+    letterSpacing: 2,
     color: "#f4f4f5",
     textAlign: "center",
+    flex: 1,
   },
   modeRow: {
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 8,
     flexDirection: "row",
+    alignItems: "center",
   },
   modeBtn: {
     paddingHorizontal: 14,
@@ -239,6 +262,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#27272a",
     backgroundColor: "#111113",
+    alignSelf: "flex-start",
   },
   modeBtnActive: {
     backgroundColor: "#f4f4f5",
@@ -258,6 +282,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     gap: 6,
     flexDirection: "row",
+    alignItems: "center",
   },
   catBtn: {
     paddingHorizontal: 12,
@@ -265,6 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 1,
     borderColor: "#27272a",
+    alignSelf: "flex-start",
   },
   catBtnActive: {
     borderColor: "#71717a",
@@ -279,9 +305,12 @@ const styles = StyleSheet.create({
     color: "#e4e4e7",
   },
   loadingRow: {
-    flex: 1,
+    paddingVertical: 20,
     alignItems: "center",
-    justifyContent: "center",
+  },
+  scrollRow: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
   list: {
     paddingHorizontal: 12,

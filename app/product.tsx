@@ -194,9 +194,9 @@ export default function ProductDetailScreen() {
               <View style={styles.sizeGrid}>
                 {[...active.sizes]
                   .sort((a, b) => (a.available === b.available ? 0 : a.available ? -1 : 1))
-                  .map((s) => (
+                  .map((s, i) => (
                     <View
-                      key={s.size}
+                      key={`${s.size}-${i}`}
                       style={[
                         styles.sizePill,
                         !s.available && styles.sizePillUnavailable,
