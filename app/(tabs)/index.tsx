@@ -42,6 +42,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#27272a",
     gap: 3,
+    alignItems: "center",
   },
   headerTitle: {
     fontFamily: "CormorantGaramond_600SemiBold",
