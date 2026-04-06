@@ -2,25 +2,13 @@ import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { BRANDS } from "@/lib/constants";
-import { getTheme } from "@/lib/theme";
-
-const theme = getTheme();
 
 export default function ShopScreen() {
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={["top"]}>
-      <View style={[styles.header, { borderBottomColor: theme.headerBorder }]}>
-        <Text style={[styles.headerTitle, {
-          fontFamily: theme.headerTitleFont,
-          color: theme.headerTitleColor,
-          fontSize: theme.headerTitleSize,
-          letterSpacing: theme.headerTitleLetterSpacing,
-        }]}>
-          Benchmark
-        </Text>
-        <Text style={[styles.headerTagline, { color: theme.taglineColor }]}>
-          FOR MEN WHO SET THE BAR
-        </Text>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>BENCHMARK</Text>
+        <Text style={styles.headerTagline}>FOR MEN WHO SET THE BAR</Text>
       </View>
 
       <ScrollView
@@ -30,10 +18,7 @@ export default function ShopScreen() {
         {BRANDS.map((brand) => (
           <TouchableOpacity
             key={brand.key}
-            style={[styles.brandTile, {
-              backgroundColor: theme.tileBg,
-              borderColor: theme.tileBorder,
-            }]}
+            style={styles.brandTile}
             onPress={() => router.push(`/brand?brand=${brand.key}`)}
             activeOpacity={0.7}
           >
@@ -48,21 +33,27 @@ export default function ShopScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
+    backgroundColor: "#09090b",
   },
   header: {
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#27272a",
     gap: 3,
   },
   headerTitle: {
-    // font/color/size/letterSpacing applied inline from theme
+    fontFamily: "CormorantGaramond_600SemiBold",
+    fontSize: 26,
+    letterSpacing: 3,
+    color: "#f4f4f5",
   },
   headerTagline: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
     letterSpacing: 2,
+    color: "#52525b",
   },
   grid: {
     flexDirection: "row",
@@ -74,8 +65,10 @@ const styles = StyleSheet.create({
     width: "47%",
     paddingVertical: 22,
     paddingHorizontal: 12,
+    backgroundColor: "#111113",
     borderRadius: 6,
     borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#27272a",
     alignItems: "center",
     justifyContent: "center",
   },
