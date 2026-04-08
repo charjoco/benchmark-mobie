@@ -51,6 +51,10 @@ export const BRANDS: { key: string; label: string }[] = [
   { key: "holderness-bourne", label: "Holderness & Bourne" },
   { key: "linksoul", label: "Linksoul" },
   { key: "paka", label: "Paka" },
+  { key: "taylor-stitch", label: "Taylor Stitch" },
+  { key: "travis-mathew", label: "TravisMathew" },
+  { key: "greyson", label: "Greyson" },
+  { key: "johnnie-o", label: "Johnnie-O" },
 ];
 
 export const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
