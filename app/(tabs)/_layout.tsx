@@ -1,6 +1,9 @@
 import { Tabs } from "expo-router";
 import { StyleSheet } from "react-native";
 import { useSaved } from "@/lib/SavedContext";
+import { getTheme } from "@/lib/theme";
+
+const theme = getTheme();
 
 export default function TabsLayout() {
   const { savedCount } = useSaved();
@@ -9,9 +12,9 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { backgroundColor: theme.screenBg }],
         tabBarActiveTintColor: "#ffffff",
-        tabBarInactiveTintColor: "#71717a",
+        tabBarInactiveTintColor: "#52525b",
         tabBarLabelStyle: styles.label,
       }}
     >
@@ -32,14 +35,13 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: "#09090b",
-    borderTopColor: "#27272a",
+    borderTopColor: "#1f1f21",
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   label: {
     fontFamily: "Inter_500Medium",
     fontSize: 11,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   badge: {
     backgroundColor: "#f87171",

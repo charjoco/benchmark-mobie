@@ -14,7 +14,10 @@ import { FlashList } from "@shopify/flash-list";
 import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
 import { BRANDS, ALL_CATEGORIES } from "@/lib/constants";
+import { getTheme } from "@/lib/theme";
 import type { AppCategory, FeedMode, FilterState, ProductRow } from "@/lib/types";
+
+const theme = getTheme();
 
 const FEED_MODES: { key: FeedMode | null; label: string }[] = [
   { key: null, label: "All" },
@@ -219,7 +222,7 @@ export default function BrandScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#09090b",
+    backgroundColor: theme.screenBg,
   },
   header: {
     flexDirection: "row",
@@ -229,7 +232,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#27272a",
+    borderBottomColor: theme.dividerColor,
   },
   backBtn: {
     width: 70,

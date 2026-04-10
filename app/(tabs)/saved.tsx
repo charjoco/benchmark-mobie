@@ -13,7 +13,10 @@ import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import { useSaved } from "@/lib/SavedContext";
 import { API_BASE_URL } from "@/lib/constants";
+import { getTheme } from "@/lib/theme";
 import type { ProductRow } from "@/lib/types";
+
+const theme = getTheme();
 
 export default function SavedScreen() {
   const { savedMap, toggleSaved, toggleWatch, isWatching } = useSaved();
@@ -163,7 +166,7 @@ export default function SavedScreen() {
 const IMG_SIZE = 80;
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#09090b" },
+  safe: { flex: 1, backgroundColor: theme.screenBg },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -172,7 +175,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#27272a",
+    borderBottomColor: theme.dividerColor,
   },
   headerTitle: {
     fontFamily: "CormorantGaramond_600SemiBold",

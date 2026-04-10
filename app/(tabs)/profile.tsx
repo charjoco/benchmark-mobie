@@ -13,7 +13,10 @@ import { useAuth } from "@/lib/AuthContext";
 import { savePreferences, UserPreferences } from "@/lib/supabase";
 import { BRANDS, SIZES, COLOR_BUCKETS } from "@/lib/constants";
 import { COLOR_BUCKET_HEX } from "@/lib/constants";
+import { getTheme } from "@/lib/theme";
 import type { ColorBucket } from "@/lib/types";
+
+const theme = getTheme();
 
 export default function ProfileScreen() {
   const { user, preferences, signOut, refreshPreferences } = useAuth();
@@ -206,7 +209,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#09090b",
+    backgroundColor: theme.screenBg,
   },
   content: {
     paddingBottom: 40,
@@ -216,7 +219,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#27272a",
+    borderBottomColor: theme.dividerColor,
     gap: 2,
   },
   headerTitle: {
@@ -250,7 +253,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#27272a",
+    backgroundColor: theme.dividerColor,
     marginHorizontal: 16,
   },
   infoRow: {
