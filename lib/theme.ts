@@ -1,21 +1,19 @@
-import type { ImageSourcePropType } from "react-native";
-
 // ─── Background image registry ───────────────────────────────────────────────
 // To add a new seasonal background:
 //  1. Drop the image into /assets/
-//  2. Add a key + require() here
-//  3. Reference the key in a new theme entry below
+//  2. Add a case to getBackgroundImage() below
+//  3. Reference the key in a new theme entry
 
-const BACKGROUND_IMAGES = {
-  leather: require("@/assets/navywaffle.webp") as ImageSourcePropType,
-  // masters: require("@/assets/masters-green.webp") as ImageSourcePropType,
-  // holiday: require("@/assets/holiday-dark.webp") as ImageSourcePropType,
-} as const;
+export type BackgroundKey = "leather"; // | "masters" | "holiday"
 
-export type BackgroundKey = keyof typeof BACKGROUND_IMAGES;
-
-export function getBackgroundImage(key: BackgroundKey): ImageSourcePropType {
-  return BACKGROUND_IMAGES[key];
+export function getBackgroundImage(key: BackgroundKey) {
+  switch (key) {
+    case "leather":
+    default:
+      return require("@/assets/navywaffle.webp");
+    // case "masters": return require("@/assets/masters-green.webp");
+    // case "holiday": return require("@/assets/holiday-dark.webp");
+  }
 }
 
 // ─── Theme definition ─────────────────────────────────────────────────────────
