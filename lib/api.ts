@@ -6,8 +6,7 @@ export function buildProductsUrl(filters: FilterState, page: number): string {
 
   if (filters.feedMode === "drops") params.set("drops", "true");
   else if (filters.feedMode === "price-drops") params.set("priceDrops", "true");
-  else if (filters.feedMode === "restocks") params.set("restocks", "true");
-  else if (filters.feedMode === "popular") params.set("popular", "true");
+
 
   if (!filters.feedMode && filters.category) params.set("category", filters.category);
   filters.brands.forEach((b) => params.append("brand", b));
@@ -51,11 +50,3 @@ export async function fetchPriceDrops(): Promise<ProductRow[]> {
   return data.products;
 }
 
-export async function fetchRestocks(): Promise<ProductRow[]> {
-  const params = new URLSearchParams({ restocks: "true", sortBy: "newest" });
-  const url = `${API_BASE_URL}/api/products?${params.toString()}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  const data = (await res.json()) as ProductsApiResponse;
-  return data.products;
-}

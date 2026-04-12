@@ -78,6 +78,5 @@ function isMastersWeek(): boolean {
 }
 
 export function getTheme(): AppTheme {
-  if (isMastersWeek()) return MASTERS;
   return DEFAULT;
 }

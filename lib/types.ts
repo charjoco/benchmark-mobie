@@ -73,7 +73,6 @@ export interface ProductRow {
   lastSeenAt: string;
   updatedAt: string;
   priceDroppedAt: string | null;
-  restockedAt: string | null;
   sellers: Seller[];
 }
 
@@ -85,7 +84,7 @@ export interface ProductsApiResponse {
   totalPages: number;
 }
 
-export type FeedMode = "drops" | "price-drops" | "restocks" | "popular";
+export type FeedMode = "drops" | "price-drops";
 
 export interface FilterState {
   category: AppCategory | null;

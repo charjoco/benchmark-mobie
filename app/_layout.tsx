@@ -3,6 +3,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Stack, router, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { PostHogProvider } from "posthog-react-native";
+import { posthog, trackAppOpen } from "@/lib/analytics";
 import {
   useFonts,
   Inter_400Regular,
@@ -50,22 +52,25 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
+      trackAppOpen();
     }
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <AuthProvider>
-          <SavedProvider>
-            <SelectedProductProvider>
-              <RootNavigator />
-            </SelectedProductProvider>
-          </SavedProvider>
-        </AuthProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <PostHogProvider client={posthog}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <SavedProvider>
+              <SelectedProductProvider>
+                <RootNavigator />
+              </SelectedProductProvider>
+            </SavedProvider>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </PostHogProvider>
   );
 }

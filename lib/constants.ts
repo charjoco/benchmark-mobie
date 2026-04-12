@@ -45,7 +45,6 @@ export const BRANDS: { key: string; label: string }[] = [
   { key: "mack-weldon", label: "Mack Weldon" },
   { key: "vuori", label: "Vuori" },
   { key: "public-rec", label: "Public Rec" },
-  { key: "lululemon", label: "Lululemon" },
   { key: "ten-thousand", label: "Ten Thousand" },
   { key: "faherty", label: "Faherty" },
   { key: "holderness-bourne", label: "Holderness & Bourne" },

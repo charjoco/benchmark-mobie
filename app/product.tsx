@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,13 +14,17 @@ import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelectedProduct } from "@/lib/SelectedProductContext";
 import { useSaved } from "@/lib/SavedContext";
+import { trackProductView, trackProductTap } from "@/lib/analytics";
 import type { Colorway, Seller } from "@/lib/types";
 
 function formatPrice(p: number) {
   return `$${p % 1 === 0 ? p.toFixed(0) : p.toFixed(2)}`;
 }
 
-function openUrl(url: string) {
+function openUrl(url: string, brand?: string, title?: string, price?: number) {
+  if (brand && title && price !== undefined) {
+    trackProductTap({ brand, title, price, url });
+  }
   WebBrowser.openBrowserAsync(url, {
     presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
   });
@@ -36,6 +40,17 @@ export default function ProductDetailScreen() {
     router.back();
     return null;
   }
+
+  useEffect(() => {
+    trackProductView({
+      brand: product.brand,
+      title: product.title,
+      category: product.category,
+      price: product.price,
+      isNew: product.isNew,
+      onSale: product.onSale,
+    });
+  }, [product.externalId]);
 
   const saved = isSaved(product.brand, product.externalId);
   const colorways: Colorway[] = Array.isArray(product.colorways) ? product.colorways : [];
@@ -226,7 +241,7 @@ export default function ProductDetailScreen() {
                   styles.sellerRow,
                   i > 0 && styles.sellerRowBorder,
                 ]}
-                onPress={() => openUrl(seller.url)}
+                onPress={() => openUrl(seller.url, product.brand, product.title, seller.price)}
                 activeOpacity={0.7}
               >
                 <View style={styles.sellerLeft}>
@@ -260,7 +275,7 @@ export default function ProductDetailScreen() {
       <SafeAreaView edges={["bottom"]} style={styles.ctaSafe}>
         <TouchableOpacity
           style={styles.ctaBtn}
-          onPress={() => openUrl(displayUrl)}
+          onPress={() => openUrl(displayUrl, product.brand, product.title, displayPrice)}
           activeOpacity={0.85}
         >
           <Text style={styles.ctaText}>SHOP AT {brandLabel.toUpperCase()}</Text>
