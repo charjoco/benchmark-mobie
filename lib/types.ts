@@ -38,6 +38,8 @@ export interface Colorway {
   compareAtPrice: number | null;
   onSale: boolean;
   sizes: SizeVariant[];
+  /** ISO timestamp when this colorway was first seen */
+  firstSeenAt?: string;
   productUrl?: string;
 }
 
