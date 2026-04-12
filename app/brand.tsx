@@ -23,8 +23,6 @@ const FEED_MODES: { key: FeedMode | null; label: string }[] = [
   { key: null, label: "All" },
   { key: "drops", label: "New Drops" },
   { key: "price-drops", label: "Price Change" },
-  { key: "restocks", label: "Restocks" },
-  { key: "popular", label: "Most Popular" },
 ];
 
 export default function BrandScreen() {

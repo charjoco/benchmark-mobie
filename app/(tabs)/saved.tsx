@@ -9,9 +9,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import * as WebBrowser from "expo-web-browser";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSaved } from "@/lib/SavedContext";
+import { useSelectedProduct } from "@/lib/SelectedProductContext";
 import { API_BASE_URL } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
 import type { ProductRow } from "@/lib/types";
@@ -20,6 +21,7 @@ const theme = getTheme();
 
 export default function SavedScreen() {
   const { savedMap, toggleSaved, toggleWatch, isWatching } = useSaved();
+  const { setProduct } = useSelectedProduct();
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -57,18 +59,18 @@ export default function SavedScreen() {
   const renderItem = useCallback(({ item }: { item: ProductRow }) => {
     const watching = isWatching(item.brand, item.externalId);
     const recentPriceDrop = item.priceDroppedAt && (now - new Date(item.priceDroppedAt).getTime()) < DAY;
-    const recentRestock = item.restockedAt && (now - new Date(item.restockedAt).getTime()) < DAY;
-    const hasAlert = watching && (recentPriceDrop || recentRestock);
+    const hasAlert = watching && recentPriceDrop;
+
+    function handleOpenProduct() {
+      setProduct(item);
+      router.push("/product");
+    }
 
     return (
       <View style={styles.item}>
         <TouchableOpacity
           style={styles.imageWrap}
-          onPress={() =>
-            WebBrowser.openBrowserAsync(item.productUrl, {
-              presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-            })
-          }
+          onPress={handleOpenProduct}
           activeOpacity={0.85}
         >
           <Image
@@ -79,9 +81,7 @@ export default function SavedScreen() {
           />
           {hasAlert && (
             <View style={styles.alertBadge}>
-              <Text style={styles.alertText}>
-                {recentPriceDrop ? "PRICE DROP" : "RESTOCKED"}
-              </Text>
+              <Text style={styles.alertText}>PRICE DROP</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -125,7 +125,7 @@ export default function SavedScreen() {
         </View>
       </View>
     );
-  }, [isWatching, toggleWatch, toggleSaved, now]);
+  }, [isWatching, toggleWatch, toggleSaved, setProduct, now]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>

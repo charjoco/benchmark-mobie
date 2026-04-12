@@ -38,6 +38,8 @@ export interface Colorway {
   compareAtPrice: number | null;
   onSale: boolean;
   sizes: SizeVariant[];
+  /** ISO timestamp when this colorway was first seen */
+  firstSeenAt?: string;
   productUrl?: string;
 }
 
@@ -73,7 +75,6 @@ export interface ProductRow {
   lastSeenAt: string;
   updatedAt: string;
   priceDroppedAt: string | null;
-  restockedAt: string | null;
   sellers: Seller[];
 }
 
@@ -85,7 +86,7 @@ export interface ProductsApiResponse {
   totalPages: number;
 }
 
-export type FeedMode = "drops" | "price-drops" | "restocks" | "popular";
+export type FeedMode = "drops" | "price-drops";
 
 export interface FilterState {
   category: AppCategory | null;
