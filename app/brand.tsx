@@ -194,12 +194,10 @@ export default function BrandScreen() {
       </ScrollView>
 
       {/* Product grid */}
-      {/* @ts-ignore estimatedItemSize is valid at runtime */}
       <FlashList
         data={isLoading ? [] : products}
         renderItem={renderItem}
         numColumns={2}
-        estimatedItemSize={320}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={isLoading ? (
           <View style={styles.loadingRow}>

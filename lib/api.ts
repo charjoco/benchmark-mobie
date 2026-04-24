@@ -1,5 +1,13 @@
 import { API_BASE_URL } from "./constants";
-import type { FilterState, ProductRow, ProductsApiResponse } from "./types";
+import type {
+  FilterState,
+  ProductRow,
+  ProductsApiResponse,
+  CollectionSummary,
+  CollectionDetail,
+  ArticleSummary,
+  ArticleDetail,
+} from "./types";
 
 export function buildProductsUrl(filters: FilterState, page: number): string {
   const params = new URLSearchParams();
@@ -48,5 +56,31 @@ export async function fetchPriceDrops(): Promise<ProductRow[]> {
   if (!res.ok) throw new Error(`API error ${res.status}`);
   const data = (await res.json()) as ProductsApiResponse;
   return data.products;
+}
+
+export async function fetchCollections(): Promise<CollectionSummary[]> {
+  const res = await fetch(`${API_BASE_URL}/api/collections`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = (await res.json()) as { collections: CollectionSummary[] };
+  return data.collections;
+}
+
+export async function fetchCollection(slug: string): Promise<CollectionDetail> {
+  const res = await fetch(`${API_BASE_URL}/api/collections/${slug}`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json() as Promise<CollectionDetail>;
+}
+
+export async function fetchArticles(): Promise<ArticleSummary[]> {
+  const res = await fetch(`${API_BASE_URL}/api/articles`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = (await res.json()) as { articles: ArticleSummary[] };
+  return data.articles;
+}
+
+export async function fetchArticle(id: string): Promise<ArticleDetail> {
+  const res = await fetch(`${API_BASE_URL}/api/articles/${id}`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json() as Promise<ArticleDetail>;
 }
 
