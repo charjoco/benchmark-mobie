@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   ScrollView,
   ImageBackground,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -15,7 +16,8 @@ import { FlashList } from "@shopify/flash-list";
 import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
 import { getTheme, getBackgroundImage } from "@/lib/theme";
-import type { FeedMode, FilterState, ProductRow } from "@/lib/types";
+import { fetchCollections, fetchArticles } from "@/lib/api";
+import type { FeedMode, FilterState, ProductRow, CollectionSummary, ArticleSummary } from "@/lib/types";
 
 const theme = getTheme();
 const bgImage = getBackgroundImage(theme.backgroundKey);
@@ -23,13 +25,47 @@ const bgImage = getBackgroundImage(theme.backgroundKey);
 const FEED_MODES: { key: FeedMode; label: string }[] = [
   { key: "drops", label: "New Drops" },
   { key: "price-drops", label: "Price Change" },
-  { key: "restocks", label: "Restocks" },
 ];
+
+// Seeded LCG for daily collection rotation — same seed = same result for all users on the same day
+function lcg(seed: number): number {
+  return (seed * 1664525 + 1013904223) & 0xffffffff;
+}
+
+function getDailyCollections(collections: CollectionSummary[]): CollectionSummary[] {
+  if (collections.length <= 2) return collections;
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  let seed = 0;
+  for (let i = 0; i < today.length; i++) {
+    seed = (seed * 31 + today.charCodeAt(i)) & 0xffffffff;
+  }
+  seed = lcg(seed);
+  const first = Math.abs(seed) % collections.length;
+  seed = lcg(seed);
+  let second = Math.abs(seed) % (collections.length - 1);
+  if (second >= first) second++;
+  return [collections[first], collections[second]];
+}
 
 export default function ShopScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = Math.floor((screenWidth - 32) / 2);
   const [feedMode, setFeedMode] = useState<FeedMode>("drops");
+
+  const [allCollections, setAllCollections] = useState<CollectionSummary[]>([]);
+  const [featuredArticle, setFeaturedArticle] = useState<ArticleSummary | null>(null);
+
+  useEffect(() => {
+    fetchCollections().then(setAllCollections).catch(console.error);
+    fetchArticles()
+      .then((articles) => setFeaturedArticle(articles[0] ?? null))
+      .catch(console.error);
+  }, []);
+
+  const dailyCollections = useMemo(
+    () => getDailyCollections(allCollections),
+    [allCollections]
+  );
 
   const filters = useMemo<FilterState>(
     () => ({
@@ -83,16 +119,91 @@ export default function ShopScreen() {
 
   const renderHeader = useCallback(
     () => (
-      <TouchableOpacity
-        style={styles.brandsBanner}
-        onPress={() => router.push("/brands")}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.brandsBannerText}>BROWSE BY BRAND</Text>
-        <Text style={styles.brandsBannerArrow}>→</Text>
-      </TouchableOpacity>
+      <>
+        {/* Curated + Editorial row — Option B layout */}
+        <View style={styles.topRow}>
+          {/* Collections card — 60% width */}
+          <TouchableOpacity
+            style={styles.collectionsCard}
+            activeOpacity={0.75}
+            onPress={() => router.push("/collections")}
+          >
+            {dailyCollections[0]?.heroProduct ? (
+              <Image
+                source={{ uri: dailyCollections[0].heroProduct.imageUrl }}
+                style={styles.collectionsHero}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={[styles.collectionsHero, { backgroundColor: "#1c1c1e" }]} />
+            )}
+            <View style={styles.collectionsOverlay}>
+              <Text style={styles.collectionsLabel}>CURATED</Text>
+              {dailyCollections.length > 0 && (
+                <Text style={styles.collectionsName} numberOfLines={1}>
+                  {dailyCollections[0].name}
+                </Text>
+              )}
+              {dailyCollections.length > 1 && (
+                <Text style={styles.collectionsName2} numberOfLines={1}>
+                  + {dailyCollections[1].name}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Right column — Editorial + Brands stacked */}
+          <View style={styles.rightColumn}>
+            {/* Editorial card */}
+            <TouchableOpacity
+              style={styles.editorialCard}
+              activeOpacity={0.75}
+              onPress={() =>
+                featuredArticle
+                  ? router.push(`/article?id=${featuredArticle.id}`)
+                  : router.push("/articles")
+              }
+            >
+              {featuredArticle?.heroImage ? (
+                <Image
+                  source={{ uri: featuredArticle.heroImage.imageUrl }}
+                  style={styles.editorialImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.editorialImage, { backgroundColor: "#1c1c1e" }]} />
+              )}
+              <View style={styles.editorialOverlay}>
+                <Text style={styles.editorialLabel}>EDITORIAL</Text>
+                {featuredArticle && (
+                  <Text style={styles.editorialTitle} numberOfLines={2}>
+                    {featuredArticle.title}
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            {/* Shop by Brand card */}
+            <TouchableOpacity
+              style={styles.brandsCard}
+              activeOpacity={0.75}
+              onPress={() => router.push("/brands")}
+            >
+              <Text style={styles.brandsLabel}>SHOP BY BRAND</Text>
+              <Text style={styles.brandsArrow}>→</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Loading spinner for products */}
+        {isLoading && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color="#71717a" size="large" />
+          </View>
+        )}
+      </>
     ),
-    []
+    [dailyCollections, featuredArticle, isLoading]
   );
 
   return (
@@ -142,23 +253,12 @@ export default function ShopScreen() {
         </ScrollView>
 
         {/* Product grid */}
-        {/* @ts-ignore estimatedItemSize is valid at runtime */}
         <FlashList
           data={isLoading ? [] : products}
           renderItem={renderItem}
           numColumns={2}
-          estimatedItemSize={340}
           keyExtractor={(item) => item.id}
-          ListHeaderComponent={
-            <>
-              {renderHeader()}
-              {isLoading && (
-                <View style={styles.loadingRow}>
-                  <ActivityIndicator color="#71717a" size="large" />
-                </View>
-              )}
-            </>
-          }
+          ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmpty}
           ListFooterComponent={renderFooter}
           onEndReached={hasMore ? loadMore : undefined}
@@ -243,31 +343,106 @@ const styles = StyleSheet.create({
   modeBtnTextActive: {
     color: "#09090b",
   },
-  // List
-  brandsBanner: {
+  // Top row (Option B)
+  topRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+  },
+  // Collections — 60% width
+  collectionsCard: {
+    flex: 6,
+    borderRadius: 6,
+    overflow: "hidden",
+    backgroundColor: "#111113",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#27272a",
+  },
+  collectionsHero: {
+    width: "100%",
+    aspectRatio: 3 / 4,
+  },
+  collectionsOverlay: {
+    padding: 10,
+    gap: 3,
+  },
+  collectionsLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 9,
+    letterSpacing: 2,
+    color: "#52525b",
+  },
+  collectionsName: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+    letterSpacing: 0.5,
+    color: "#f4f4f5",
+  },
+  collectionsName2: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: "#71717a",
+  },
+  // Right column — 40% width
+  rightColumn: {
+    flex: 4,
+    gap: 8,
+  },
+  // Editorial card
+  editorialCard: {
+    flex: 1,
+    borderRadius: 6,
+    overflow: "hidden",
+    backgroundColor: "#111113",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#27272a",
+  },
+  editorialImage: {
+    width: "100%",
+    flex: 1,
+    minHeight: 80,
+  },
+  editorialOverlay: {
+    padding: 8,
+    gap: 3,
+  },
+  editorialLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 9,
+    letterSpacing: 2,
+    color: "#52525b",
+  },
+  editorialTitle: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: "#e4e4e7",
+    lineHeight: 14,
+  },
+  // Brands card
+  brandsCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginHorizontal: 0,
-    marginBottom: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 14,
-    borderRadius: 4,
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    borderRadius: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#27272a",
     backgroundColor: "rgba(17,17,19,0.6)",
+    flexShrink: 0,
   },
-  brandsBannerText: {
+  brandsLabel: {
     fontFamily: "Inter_600SemiBold",
-    fontSize: 10,
+    fontSize: 9,
     letterSpacing: 1.5,
     color: "#71717a",
   },
-  brandsBannerArrow: {
+  brandsArrow: {
     fontFamily: "Inter_400Regular",
-    fontSize: 14,
+    fontSize: 13,
     color: "#52525b",
   },
+  // List
   list: {
     paddingHorizontal: 12,
     paddingBottom: 32,

@@ -88,6 +88,62 @@ export interface ProductsApiResponse {
 
 export type FeedMode = "drops" | "price-drops";
 
+// Collections
+export interface CollectionHeroProduct {
+  id: string;
+  title: string;
+  imageUrl: string;
+}
+
+export interface CollectionSummary {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  heroProduct: CollectionHeroProduct | null;
+  productCount: number;
+}
+
+export interface CollectionDetail {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  products: ProductRow[];
+}
+
+// Articles
+export interface ArticleHeroImage {
+  imageUrl: string;
+  altText: string | null;
+}
+
+export interface ArticleSummary {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  publishedAt: string | null;
+  heroImage: ArticleHeroImage | null;
+  productCount: number;
+}
+
+export interface ArticleImage {
+  id: string;
+  imageUrl: string;
+  altText: string | null;
+  position: number;
+}
+
+export interface ArticleDetail {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  body: string;
+  publishedAt: string | null;
+  images: ArticleImage[];
+  products: ProductRow[];
+}
+
 export interface FilterState {
   category: AppCategory | null;
   feedMode: FeedMode | null;
