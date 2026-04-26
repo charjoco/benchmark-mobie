@@ -128,9 +128,9 @@ export default function ShopScreen() {
             activeOpacity={0.75}
             onPress={() => router.push("/collections")}
           >
-            {dailyCollections[0]?.heroProduct ? (
+            {dailyCollections[0]?.heroImageUrl ?? dailyCollections[0]?.heroProduct?.imageUrl ? (
               <Image
-                source={{ uri: dailyCollections[0].heroProduct.imageUrl }}
+                source={{ uri: (dailyCollections[0].heroImageUrl ?? dailyCollections[0].heroProduct?.imageUrl)! }}
                 style={styles.collectionsHero}
                 resizeMode="cover"
               />

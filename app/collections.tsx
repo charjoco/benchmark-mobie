@@ -11,10 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { fetchCollections } from "@/lib/api";
-import { getTheme } from "@/lib/theme";
 import type { CollectionSummary } from "@/lib/types";
-
-const theme = getTheme();
 
 export default function CollectionsScreen() {
   const [collections, setCollections] = useState<CollectionSummary[]>([]);
@@ -59,9 +56,9 @@ export default function CollectionsScreen() {
               activeOpacity={0.75}
               onPress={() => router.push(`/collection?slug=${item.slug}`)}
             >
-              {item.heroProduct ? (
+              {item.heroImageUrl ?? item.heroProduct?.imageUrl ? (
                 <Image
-                  source={{ uri: item.heroProduct.imageUrl }}
+                  source={{ uri: (item.heroImageUrl ?? item.heroProduct?.imageUrl)! }}
                   style={styles.heroImage}
                   resizeMode="cover"
                 />

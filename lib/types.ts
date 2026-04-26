@@ -100,6 +100,7 @@ export interface CollectionSummary {
   name: string;
   slug: string;
   description: string | null;
+  heroImageUrl: string | null;
   heroProduct: CollectionHeroProduct | null;
   productCount: number;
 }
@@ -109,6 +110,7 @@ export interface CollectionDetail {
   name: string;
   slug: string;
   description: string | null;
+  heroImageUrl: string | null;
   products: ProductRow[];
 }
 
