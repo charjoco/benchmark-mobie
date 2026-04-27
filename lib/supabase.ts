@@ -52,9 +52,10 @@ export async function loadPreferences(userId: string): Promise<UserPreferences> 
 export async function savePreferences(
   userId: string,
   prefs: UserPreferences
-): Promise<void> {
-  await supabase.from("user_preferences").upsert(
+): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
+  const { error } = await supabase.from("user_preferences").upsert(
     { user_id: userId, ...prefs, updated_at: new Date().toISOString() },
     { onConflict: "user_id" }
   );
+  return { error };
 }

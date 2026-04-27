@@ -54,10 +54,19 @@ export default function ProfileScreen() {
   async function handleSave() {
     if (!user) return;
     setSaving(true);
-    await savePreferences(user.id, draft);
-    await refreshPreferences();
-    setSaving(false);
-    Alert.alert("Saved", "Your preferences have been saved.");
+    try {
+      const { error } = await savePreferences(user.id, draft);
+      if (error) {
+        Alert.alert("Error", "Failed to save preferences. Please try again.");
+        return;
+      }
+      await refreshPreferences();
+      Alert.alert("Saved", "Your preferences have been saved.");
+    } catch {
+      Alert.alert("Error", "Failed to save preferences. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleSignOut() {
