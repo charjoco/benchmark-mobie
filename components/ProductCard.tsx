@@ -12,6 +12,8 @@ import { router } from "expo-router";
 import { COLOR_BUCKET_HEX } from "@/lib/constants";
 import type { ProductRow, Colorway, ColorBucket } from "@/lib/types";
 import { useSelectedProduct } from "@/lib/SelectedProductContext";
+import { useAuth } from "@/lib/AuthContext";
+import { computeBadge } from "@/lib/fitBadge";
 
 interface ProductCardProps {
   product: ProductRow;
@@ -30,6 +32,8 @@ export const ProductCard = memo(function ProductCard({
 
   const [activeIndex, setActiveIndex] = useState(0);
   const { setProduct } = useSelectedProduct();
+  const { preferences } = useAuth();
+  const badgeText = computeBadge(product, preferences);
 
   const colorways: Colorway[] = Array.isArray(product.colorways)
     ? product.colorways
@@ -103,6 +107,11 @@ export const ProductCard = memo(function ProductCard({
             <Text style={styles.comparePrice}>{formatPrice(displayCompare)}</Text>
           )}
         </View>
+
+        {/* Wardrobe Fit badge */}
+        {badgeText && (
+          <Text style={styles.badge}>{badgeText}</Text>
+        )}
 
         {/* Color swatches */}
         {colorways.length > 1 && (
@@ -214,5 +223,11 @@ const styles = StyleSheet.create({
   swatchActive: {
     borderColor: "#ffffff",
     transform: [{ scale: 1.2 }],
+  },
+  badge: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 10,
+    color: "#52525b",
+    marginTop: 2,
   },
 });
