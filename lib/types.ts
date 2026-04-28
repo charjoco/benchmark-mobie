@@ -146,6 +146,17 @@ export interface ArticleDetail {
   products: ProductRow[];
 }
 
+export interface BrandCategoryCount {
+  category: string;
+  count: number;
+}
+
+export interface BrandCategoriesResponse {
+  brand: string;
+  total: number;
+  categories: BrandCategoryCount[];
+}
+
 export interface FilterState {
   category: AppCategory | null;
   feedMode: FeedMode | null;

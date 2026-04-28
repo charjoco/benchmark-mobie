@@ -43,7 +43,7 @@ export default function BrandsScreen() {
                   borderColor: theme.tileBorder,
                 },
               ]}
-              onPress={() => router.push(`/brand?brand=${brand.key}`)}
+              onPress={() => router.push(`/brand-categories?brand=${brand.key}`)}
               activeOpacity={0.65}
             >
               <Text style={[styles.brandLabel, { color: theme.tileText }]}>

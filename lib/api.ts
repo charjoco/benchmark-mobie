@@ -7,6 +7,7 @@ import type {
   CollectionDetail,
   ArticleSummary,
   ArticleDetail,
+  BrandCategoriesResponse,
 } from "./types";
 
 export function buildProductsUrl(filters: FilterState, page: number): string {
@@ -82,5 +83,11 @@ export async function fetchArticle(id: string): Promise<ArticleDetail> {
   const res = await fetch(`${API_BASE_URL}/api/articles/${id}`);
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json() as Promise<ArticleDetail>;
+}
+
+export async function fetchBrandCategories(brand: string): Promise<BrandCategoriesResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/brands/${brand}/categories`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json() as Promise<BrandCategoriesResponse>;
 }
 
