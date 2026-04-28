@@ -58,6 +58,22 @@ export const BRANDS: { key: string; label: string }[] = [
 
 export const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 
+export const TOP_SIZES    = ["XS", "S", "M", "L", "XL", "XXL"];
+export const BOTTOM_SIZES = ["28", "29", "30", "31", "32", "33", "34", "36", "38", "40"];
+
+export const STYLE_LEAN_OPTIONS: { key: string; label: string; description: string }[] = [
+  { key: "performance",     label: "Performance",     description: "Training gear, technical fabrics, gym-to-street" },
+  { key: "elevated-basics", label: "Elevated Basics", description: "Quality essentials, clean lines, everyday wear" },
+  { key: "smart-casual",    label: "Smart Casual",    description: "Office-friendly, polished but comfortable" },
+  { key: "golf",            label: "Golf",            description: "Course-ready, clubhouse to dinner" },
+];
+
+export const PRICE_COMFORT_OPTIONS: { key: string; label: string; description: string }[] = [
+  { key: "under-75",  label: "Under $75", description: "Value-focused, great quality at fair prices" },
+  { key: "75-150",    label: "$75–$150",  description: "Premium quality, the sweet spot for most brands" },
+  { key: "150-plus",  label: "$150+",     description: "Best of the best, no compromise" },
+];
+
 export const COLOR_BUCKETS: ColorBucket[] = [
   "Black",
   "White",

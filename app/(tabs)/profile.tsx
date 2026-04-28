@@ -9,6 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { useAuth } from "@/lib/AuthContext";
 import { savePreferences, UserPreferences } from "@/lib/supabase";
 import { BRANDS, SIZES, COLOR_BUCKETS } from "@/lib/constants";
@@ -96,6 +97,21 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </View>
+
+        <View style={styles.divider} />
+
+        {/* Style preferences */}
+        <TouchableOpacity
+          style={styles.prefRow}
+          onPress={() => router.push("/onboarding")}
+          activeOpacity={0.7}
+        >
+          <View>
+            <Text style={styles.prefRowLabel}>STYLE PREFERENCES</Text>
+            <Text style={styles.prefRowHint}>Brands, sizes, style lean, price range</Text>
+          </View>
+          <Text style={styles.prefRowArrow}>→</Text>
+        </TouchableOpacity>
 
         <View style={styles.divider} />
 
@@ -390,6 +406,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 1.5,
     color: "#09090b",
+  },
+  prefRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    gap: 12,
+  },
+  prefRowLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: "#71717a",
+    marginBottom: 3,
+  },
+  prefRowHint: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: "#3f3f46",
+  },
+  prefRowArrow: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 16,
+    color: "#52525b",
   },
   signOutBtn: {
     marginHorizontal: 16,

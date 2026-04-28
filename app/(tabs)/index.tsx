@@ -17,6 +17,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
 import { getTheme, getBackgroundImage } from "@/lib/theme";
 import { fetchCollections, fetchArticles } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 import type { FeedMode, FilterState, ProductRow, CollectionSummary, ArticleSummary } from "@/lib/types";
 
 const theme = getTheme();
@@ -48,6 +49,7 @@ function getDailyCollections(collections: CollectionSummary[]): CollectionSummar
 }
 
 export default function ShopScreen() {
+  const { preferences, isGuest } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = Math.floor((screenWidth - 32) / 2);
   const [feedMode, setFeedMode] = useState<FeedMode>("drops");
@@ -204,6 +206,20 @@ export default function ShopScreen() {
           <Text style={styles.categoriesLabel}>SHOP BY CATEGORY</Text>
           <Text style={styles.categoriesArrow}>→</Text>
         </TouchableOpacity>
+
+        {/* Onboarding banner — shown until user completes style preferences */}
+        {!isGuest && !preferences.onboarding_complete && (
+          <TouchableOpacity
+            style={styles.onboardingBanner}
+            activeOpacity={0.75}
+            onPress={() => router.push("/onboarding")}
+          >
+            <Text style={styles.onboardingBannerText}>
+              Set up your profile for personalized recommendations
+            </Text>
+            <Text style={styles.onboardingBannerCta}>Get started →</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Loading spinner for products */}
         {isLoading && (
@@ -427,6 +443,34 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#e4e4e7",
     lineHeight: 14,
+  },
+  // Onboarding banner
+  onboardingBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#3f3f46",
+    backgroundColor: "rgba(17,17,19,0.6)",
+    marginBottom: 10,
+    gap: 8,
+  },
+  onboardingBannerText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: "#71717a",
+    flex: 1,
+    lineHeight: 17,
+  },
+  onboardingBannerCta: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 11,
+    letterSpacing: 0.5,
+    color: "#a1a1aa",
+    flexShrink: 0,
   },
   // Shop by Category card
   categoriesCard: {

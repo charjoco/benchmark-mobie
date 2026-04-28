@@ -27,6 +27,14 @@ export type UserPreferences = {
   sort_by: string;
   on_sale: boolean;
   is_new: boolean;
+  // Onboarding-captured personalization fields
+  preferred_brands: string[];
+  top_size: string | null;
+  bottom_size: string | null;
+  outerwear_size: string | null;
+  style_lean: string[];
+  price_comfort: string | null;
+  onboarding_complete: boolean;
 };
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -36,12 +44,22 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   sort_by: "lastSeenAt",
   on_sale: false,
   is_new: false,
+  preferred_brands: [],
+  top_size: null,
+  bottom_size: null,
+  outerwear_size: null,
+  style_lean: [],
+  price_comfort: null,
+  onboarding_complete: false,
 };
+
+const PREFS_SELECT =
+  "brands, sizes, colors, sort_by, on_sale, is_new, preferred_brands, top_size, bottom_size, outerwear_size, style_lean, price_comfort, onboarding_complete";
 
 export async function loadPreferences(userId: string): Promise<UserPreferences> {
   const { data, error } = await supabase
     .from("user_preferences")
-    .select("brands, sizes, colors, sort_by, on_sale, is_new")
+    .select(PREFS_SELECT)
     .eq("user_id", userId)
     .single();
 
@@ -55,6 +73,31 @@ export async function savePreferences(
 ): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
   const { error } = await supabase.from("user_preferences").upsert(
     { user_id: userId, ...prefs, updated_at: new Date().toISOString() },
+    { onConflict: "user_id" }
+  );
+  return { error };
+}
+
+export interface OnboardingData {
+  preferred_brands: string[];
+  top_size: string;
+  bottom_size: string;
+  outerwear_size: string | null;
+  style_lean: string[];
+  price_comfort: string;
+}
+
+export async function saveOnboardingPreferences(
+  userId: string,
+  data: OnboardingData
+): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
+  const { error } = await supabase.from("user_preferences").upsert(
+    {
+      user_id: userId,
+      ...data,
+      onboarding_complete: true,
+      updated_at: new Date().toISOString(),
+    },
     { onConflict: "user_id" }
   );
   return { error };

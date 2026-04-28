@@ -8,6 +8,7 @@ type AuthContextType = {
   preferences: UserPreferences;
   isLoading: boolean;
   isGuest: boolean;
+  onboardingComplete: boolean;
   continueAsGuest: () => void;
   signOut: () => Promise<void>;
   refreshPreferences: () => Promise<void>;
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   preferences: DEFAULT_PREFERENCES,
   isLoading: true,
   isGuest: false,
+  onboardingComplete: false,
   continueAsGuest: () => {},
   signOut: async () => {},
   refreshPreferences: async () => {},
@@ -74,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         preferences,
         isLoading,
         isGuest,
+        onboardingComplete: preferences.onboarding_complete,
         continueAsGuest,
         signOut,
         refreshPreferences,

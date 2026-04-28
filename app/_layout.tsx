@@ -22,20 +22,27 @@ import { SelectedProductProvider } from "@/lib/SelectedProductContext";
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { session, isLoading, isGuest } = useAuth();
+  const { session, isLoading, isGuest, onboardingComplete } = useAuth();
   const segments = useSegments();
 
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === "(auth)";
+    const inAuthGroup   = segments[0] === "(auth)";
+    const inOnboarding  = segments[0] === "onboarding";
 
     if (!session && !isGuest && !inAuthGroup) {
       router.replace("/(auth)/login");
-    } else if ((session || isGuest) && inAuthGroup) {
+    } else if (session && !onboardingComplete && !inOnboarding) {
+      router.replace("/onboarding");
+    } else if (session && onboardingComplete && inOnboarding) {
+      router.replace("/(tabs)");
+    } else if (session && inAuthGroup) {
+      router.replace("/(tabs)");
+    } else if (isGuest && inAuthGroup) {
       router.replace("/(tabs)");
     }
-  }, [session, isLoading, isGuest, segments]);
+  }, [session, isLoading, isGuest, onboardingComplete, segments]);
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }
