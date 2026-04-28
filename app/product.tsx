@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,6 +35,8 @@ export default function ProductDetailScreen() {
   const { isSaved, toggleSaved } = useSaved();
   const { width: screenWidth } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [toastVisible, setToastVisible] = useState(false);
+  const wasAlreadySavedRef = useRef(false);
 
   if (!product) {
     router.back();
@@ -53,6 +55,17 @@ export default function ProductDetailScreen() {
   }, [product.externalId]);
 
   const saved = isSaved(product.brand, product.externalId);
+
+  // Show "Saved to your collection" toast when returning from handoff
+  useFocusEffect(
+    useCallback(() => {
+      if (!wasAlreadySavedRef.current && saved) {
+        setToastVisible(true);
+        const t = setTimeout(() => setToastVisible(false), 2500);
+        return () => clearTimeout(t);
+      }
+    }, [saved])
+  );
   const colorways: Colorway[] = Array.isArray(product.colorways) ? product.colorways : [];
 
   const active = colorways[activeIndex] ?? {
@@ -275,12 +288,30 @@ export default function ProductDetailScreen() {
       <SafeAreaView edges={["bottom"]} style={styles.ctaSafe}>
         <TouchableOpacity
           style={styles.ctaBtn}
-          onPress={() => openUrl(displayUrl, product.brand, product.title, displayPrice)}
+          onPress={() => {
+            wasAlreadySavedRef.current = saved;
+            trackProductTap({
+              brand: product.brand,
+              title: product.title,
+              price: displayPrice,
+              url: displayUrl,
+            });
+            router.push(
+              `/handoff?url=${encodeURIComponent(displayUrl)}&brand=${encodeURIComponent(brandLabel)}&title=${encodeURIComponent(product.title)}`
+            );
+          }}
           activeOpacity={0.85}
         >
           <Text style={styles.ctaText}>SHOP AT {brandLabel.toUpperCase()}</Text>
         </TouchableOpacity>
       </SafeAreaView>
+
+      {/* Auto-save toast */}
+      {toastVisible && (
+        <View style={styles.toast} pointerEvents="none">
+          <Text style={styles.toastText}>Saved to your collection</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -502,5 +533,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 1.5,
     color: "#09090b",
+  },
+  toast: {
+    position: "absolute",
+    top: 60,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  toastText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    color: "#f4f4f5",
+    backgroundColor: "rgba(0,0,0,0.72)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    overflow: "hidden",
   },
 });
