@@ -195,6 +195,16 @@ export default function ShopScreen() {
           </View>
         </View>
 
+        {/* Shop by Category tile */}
+        <TouchableOpacity
+          style={styles.categoriesCard}
+          activeOpacity={0.75}
+          onPress={() => router.push("/categories")}
+        >
+          <Text style={styles.categoriesLabel}>SHOP BY CATEGORY</Text>
+          <Text style={styles.categoriesArrow}>→</Text>
+        </TouchableOpacity>
+
         {/* Loading spinner for products */}
         {isLoading && (
           <View style={styles.loadingRow}>
@@ -417,6 +427,30 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#e4e4e7",
     lineHeight: 14,
+  },
+  // Shop by Category card
+  categoriesCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#27272a",
+    backgroundColor: "rgba(17,17,19,0.6)",
+    marginBottom: 10,
+  },
+  categoriesLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 9,
+    letterSpacing: 1.5,
+    color: "#71717a",
+  },
+  categoriesArrow: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: "#52525b",
   },
   // Brands card
   brandsCard: {

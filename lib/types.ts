@@ -157,6 +157,16 @@ export interface BrandCategoriesResponse {
   categories: BrandCategoryCount[];
 }
 
+export interface CategoryCount {
+  category: string;
+  count: number;
+}
+
+export interface CategoriesResponse {
+  total: number;
+  categories: CategoryCount[];
+}
+
 export interface FilterState {
   category: AppCategory | null;
   feedMode: FeedMode | null;
