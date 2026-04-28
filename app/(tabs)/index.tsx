@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,21 +12,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { FlashList } from "@shopify/flash-list";
 import { ProductCard } from "@/components/ProductCard";
-import { useProducts } from "@/hooks/useProducts";
+import { useAuth } from "@/lib/AuthContext";
+import { usePersonalizedFeed } from "@/hooks/usePersonalizedFeed";
 import { getTheme, getBackgroundImage } from "@/lib/theme";
 import { fetchCollections, fetchArticles } from "@/lib/api";
-import { useAuth } from "@/lib/AuthContext";
-import type { FeedMode, FilterState, ProductRow, CollectionSummary, ArticleSummary } from "@/lib/types";
+import type { CollectionSummary, ArticleSummary } from "@/lib/types";
 
 const theme = getTheme();
 const bgImage = getBackgroundImage(theme.backgroundKey);
-
-const FEED_MODES: { key: FeedMode; label: string }[] = [
-  { key: "drops", label: "New Drops" },
-  { key: "price-drops", label: "Price Change" },
-];
 
 // Seeded LCG for daily collection rotation — same seed = same result for all users on the same day
 function lcg(seed: number): number {
@@ -35,7 +29,7 @@ function lcg(seed: number): number {
 
 function getDailyCollections(collections: CollectionSummary[]): CollectionSummary[] {
   if (collections.length <= 2) return collections;
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const today = new Date().toISOString().slice(0, 10);
   let seed = 0;
   for (let i = 0; i < today.length; i++) {
     seed = (seed * 31 + today.charCodeAt(i)) & 0xffffffff;
@@ -52,7 +46,6 @@ export default function ShopScreen() {
   const { preferences, isGuest } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = Math.floor((screenWidth - 32) / 2);
-  const [feedMode, setFeedMode] = useState<FeedMode>("drops");
 
   const [allCollections, setAllCollections] = useState<CollectionSummary[]>([]);
   const [featuredArticle, setFeaturedArticle] = useState<ArticleSummary | null>(null);
@@ -69,175 +62,17 @@ export default function ShopScreen() {
     [allCollections]
   );
 
-  const filters = useMemo<FilterState>(
-    () => ({
-      category: null,
-      feedMode,
-      brands: [],
-      colors: [],
-      sizes: [],
-      onSale: false,
-      isNew: false,
-      sortBy: feedMode === "drops" ? "newest" : "lastSeenAt",
-    }),
-    [feedMode]
-  );
+  const { products: personalizedProducts, isLoading: personalizedLoading, isFallback, fallbackBrandLabel } =
+    usePersonalizedFeed(preferences);
 
-  const { products, isLoading, isLoadingMore, hasMore, loadMore, refresh } =
-    useProducts(filters);
-
-  const renderItem = useCallback(
-    ({ item, index }: { item: ProductRow; index: number }) => (
-      <View
-        style={[
-          styles.itemWrapper,
-          index % 2 === 0 ? { paddingRight: 4 } : { paddingLeft: 4 },
-        ]}
-      >
-        <ProductCard product={item} cardWidth={cardWidth} />
-      </View>
-    ),
-    [cardWidth]
-  );
-
-  const renderFooter = useCallback(() => {
-    if (!isLoadingMore) return null;
-    return (
-      <View style={styles.footer}>
-        <ActivityIndicator color="#71717a" size="small" />
-      </View>
-    );
-  }, [isLoadingMore]);
-
-  const renderEmpty = useCallback(() => {
-    if (isLoading) return null;
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>Nothing here yet</Text>
-        <Text style={styles.emptySubtext}>Check back after the next scrape.</Text>
-      </View>
-    );
-  }, [isLoading]);
-
-  const renderHeader = useCallback(
-    () => (
-      <>
-        {/* Curated + Editorial row — Option B layout */}
-        <View style={styles.topRow}>
-          {/* Collections card — 60% width */}
-          <TouchableOpacity
-            style={styles.collectionsCard}
-            activeOpacity={0.75}
-            onPress={() => router.push("/collections")}
-          >
-            {dailyCollections[0]?.heroImageUrl ?? dailyCollections[0]?.heroProduct?.imageUrl ? (
-              <Image
-                source={{ uri: (dailyCollections[0].heroImageUrl ?? dailyCollections[0].heroProduct?.imageUrl)! }}
-                style={styles.collectionsHero}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={[styles.collectionsHero, { backgroundColor: "#1c1c1e" }]} />
-            )}
-            <View style={styles.collectionsOverlay}>
-              <Text style={styles.collectionsLabel}>CURATED</Text>
-              {dailyCollections.length > 0 && (
-                <Text style={styles.collectionsName} numberOfLines={1}>
-                  {dailyCollections[0].name}
-                </Text>
-              )}
-              {dailyCollections.length > 1 && (
-                <Text style={styles.collectionsName2} numberOfLines={1}>
-                  + {dailyCollections[1].name}
-                </Text>
-              )}
-            </View>
-          </TouchableOpacity>
-
-          {/* Right column — Editorial + Brands stacked */}
-          <View style={styles.rightColumn}>
-            {/* Editorial card */}
-            <TouchableOpacity
-              style={styles.editorialCard}
-              activeOpacity={0.75}
-              onPress={() =>
-                featuredArticle
-                  ? router.push(`/article?id=${featuredArticle.id}`)
-                  : router.push("/articles")
-              }
-            >
-              {featuredArticle?.heroImage ? (
-                <Image
-                  source={{ uri: featuredArticle.heroImage.imageUrl }}
-                  style={styles.editorialImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={[styles.editorialImage, { backgroundColor: "#1c1c1e" }]} />
-              )}
-              <View style={styles.editorialOverlay}>
-                <Text style={styles.editorialLabel}>EDITORIAL</Text>
-                {featuredArticle && (
-                  <Text style={styles.editorialTitle} numberOfLines={2}>
-                    {featuredArticle.title}
-                  </Text>
-                )}
-              </View>
-            </TouchableOpacity>
-
-            {/* Shop by Brand card */}
-            <TouchableOpacity
-              style={styles.brandsCard}
-              activeOpacity={0.75}
-              onPress={() => router.push("/brands")}
-            >
-              <Text style={styles.brandsLabel}>SHOP BY BRAND</Text>
-              <Text style={styles.brandsArrow}>→</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Shop by Category tile */}
-        <TouchableOpacity
-          style={styles.categoriesCard}
-          activeOpacity={0.75}
-          onPress={() => router.push("/categories")}
-        >
-          <Text style={styles.categoriesLabel}>SHOP BY CATEGORY</Text>
-          <Text style={styles.categoriesArrow}>→</Text>
-        </TouchableOpacity>
-
-        {/* Onboarding banner — shown until user completes style preferences */}
-        {!isGuest && !preferences.onboarding_complete && (
-          <TouchableOpacity
-            style={styles.onboardingBanner}
-            activeOpacity={0.75}
-            onPress={() => router.push("/onboarding")}
-          >
-            <Text style={styles.onboardingBannerText}>
-              Set up your profile for personalized recommendations
-            </Text>
-            <Text style={styles.onboardingBannerCta}>Get started →</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Loading spinner for products */}
-        {isLoading && (
-          <View style={styles.loadingRow}>
-            <ActivityIndicator color="#71717a" size="large" />
-          </View>
-        )}
-      </>
-    ),
-    [dailyCollections, featuredArticle, isLoading]
-  );
+  const showPersonalized = !isGuest && preferences.onboarding_complete;
 
   return (
     <ImageBackground source={bgImage} style={styles.bg} resizeMode="cover">
       <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.overlayColor }]} />
 
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        {/* Header */}
+        {/* Benchmark header */}
         <View style={styles.header}>
           <View style={[styles.headerRule, { backgroundColor: theme.headerRuleColor }]} />
           <Text style={styles.headerTitle}>BENCHMARK</Text>
@@ -252,47 +87,150 @@ export default function ShopScreen() {
           <View style={[styles.headerRule, { backgroundColor: theme.headerRuleColor }]} />
         </View>
 
-        {/* Feed mode selector */}
         <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.modeRow}
-          style={styles.modeScroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          {FEED_MODES.map((m) => (
+          {/* Top navigation row — Collections 60% + Editorial/Brands stacked */}
+          <View style={styles.topRow}>
             <TouchableOpacity
-              key={m.key}
-              style={[styles.modeBtn, feedMode === m.key && styles.modeBtnActive]}
-              onPress={() => setFeedMode(m.key)}
-              activeOpacity={0.7}
+              style={styles.collectionsCard}
+              activeOpacity={0.75}
+              onPress={() => router.push("/collections")}
             >
-              <Text
-                style={[
-                  styles.modeBtnText,
-                  feedMode === m.key && styles.modeBtnTextActive,
-                ]}
-              >
-                {m.label.toUpperCase()}
-              </Text>
+              {dailyCollections[0]?.heroImageUrl ?? dailyCollections[0]?.heroProduct?.imageUrl ? (
+                <Image
+                  source={{ uri: (dailyCollections[0].heroImageUrl ?? dailyCollections[0].heroProduct?.imageUrl)! }}
+                  style={styles.collectionsHero}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.collectionsHero, { backgroundColor: "#1c1c1e" }]} />
+              )}
+              <View style={styles.collectionsOverlay}>
+                <Text style={styles.collectionsLabel}>CURATED</Text>
+                {dailyCollections.length > 0 && (
+                  <Text style={styles.collectionsName} numberOfLines={1}>
+                    {dailyCollections[0].name}
+                  </Text>
+                )}
+                {dailyCollections.length > 1 && (
+                  <Text style={styles.collectionsName2} numberOfLines={1}>
+                    + {dailyCollections[1].name}
+                  </Text>
+                )}
+              </View>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
 
-        {/* Product grid */}
-        <FlashList
-          data={isLoading ? [] : products}
-          renderItem={renderItem}
-          numColumns={2}
-          keyExtractor={(item) => item.id}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmpty}
-          ListFooterComponent={renderFooter}
-          onEndReached={hasMore ? loadMore : undefined}
-          onEndReachedThreshold={0.3}
-          onRefresh={refresh}
-          refreshing={false}
-          contentContainerStyle={styles.list}
-        />
+            <View style={styles.rightColumn}>
+              <TouchableOpacity
+                style={styles.editorialCard}
+                activeOpacity={0.75}
+                onPress={() =>
+                  featuredArticle
+                    ? router.push(`/article?id=${featuredArticle.id}`)
+                    : router.push("/articles")
+                }
+              >
+                {featuredArticle?.heroImage ? (
+                  <Image
+                    source={{ uri: featuredArticle.heroImage.imageUrl }}
+                    style={styles.editorialImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.editorialImage, { backgroundColor: "#1c1c1e" }]} />
+                )}
+                <View style={styles.editorialOverlay}>
+                  <Text style={styles.editorialLabel}>EDITORIAL</Text>
+                  {featuredArticle && (
+                    <Text style={styles.editorialTitle} numberOfLines={2}>
+                      {featuredArticle.title}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.navCard}
+                activeOpacity={0.75}
+                onPress={() => router.push("/brands")}
+              >
+                <Text style={styles.navCardLabel}>SHOP BY BRAND</Text>
+                <Text style={styles.navCardArrow}>→</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Shop by Category tile */}
+          <TouchableOpacity
+            style={styles.navCard}
+            activeOpacity={0.75}
+            onPress={() => router.push("/categories")}
+          >
+            <Text style={styles.navCardLabel}>SHOP BY CATEGORY</Text>
+            <Text style={styles.navCardArrow}>→</Text>
+          </TouchableOpacity>
+
+          {/* New from your brands section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>NEW FROM YOUR BRANDS</Text>
+
+            {!showPersonalized ? (
+              /* Onboarding incomplete — show banner */
+              <TouchableOpacity
+                style={styles.onboardingBanner}
+                activeOpacity={0.75}
+                onPress={() => router.push("/onboarding")}
+              >
+                <Text style={styles.onboardingBannerText}>
+                  Set up your profile for personalized recommendations
+                </Text>
+                <Text style={styles.onboardingBannerCta}>Get started →</Text>
+              </TouchableOpacity>
+            ) : personalizedLoading ? (
+              <View style={styles.sectionLoading}>
+                <ActivityIndicator color="#71717a" size="large" />
+              </View>
+            ) : (
+              <>
+                {isFallback && (
+                  <Text style={styles.fallbackNote}>
+                    Nothing new this week — here's the latest from {fallbackBrandLabel}.
+                  </Text>
+                )}
+
+                {/* 2-column product grid */}
+                <View style={styles.productGrid}>
+                  {personalizedProducts.map((product, index) => (
+                    <View
+                      key={product.id}
+                      style={[
+                        styles.productGridItem,
+                        index % 2 === 0 ? { paddingRight: 4 } : { paddingLeft: 4 },
+                      ]}
+                    >
+                      <ProductCard
+                        product={product}
+                        cardWidth={cardWidth}
+                        showBrand={true}
+                      />
+                    </View>
+                  ))}
+                </View>
+
+                {/* See all link */}
+                <TouchableOpacity
+                  style={styles.seeAllBtn}
+                  onPress={() => router.push("/feed")}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.seeAllText}>See all new arrivals →</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </ImageBackground>
   );
@@ -301,7 +239,6 @@ export default function ShopScreen() {
 const styles = StyleSheet.create({
   bg: { flex: 1 },
   safe: { flex: 1 },
-  // Header
   header: {
     paddingHorizontal: 20,
     paddingTop: 14,
@@ -336,46 +273,17 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
     textAlign: "center",
   },
-  // Feed mode
-  modeScroll: {
-    flexGrow: 0,
-    flexShrink: 0,
+  scrollContent: {
+    paddingHorizontal: 12,
+    paddingTop: 14,
+    paddingBottom: 40,
+    gap: 10,
   },
-  modeRow: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 8,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  modeBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "#27272a",
-    backgroundColor: "rgba(17,17,19,0.7)",
-  },
-  modeBtnActive: {
-    backgroundColor: "#f4f4f5",
-    borderColor: "#f4f4f5",
-  },
-  modeBtnText: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 10,
-    letterSpacing: 1.2,
-    color: "#71717a",
-  },
-  modeBtnTextActive: {
-    color: "#09090b",
-  },
-  // Top row (Option B)
+  // Top navigation row
   topRow: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 10,
   },
-  // Collections — 60% width
   collectionsCard: {
     flex: 6,
     borderRadius: 6,
@@ -409,12 +317,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#71717a",
   },
-  // Right column — 40% width
   rightColumn: {
     flex: 4,
     gap: 8,
   },
-  // Editorial card
   editorialCard: {
     flex: 1,
     borderRadius: 6,
@@ -444,18 +350,79 @@ const styles = StyleSheet.create({
     color: "#e4e4e7",
     lineHeight: 14,
   },
-  // Onboarding banner
+  // Shared nav card (Shop by Brand, Shop by Category)
+  navCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 13,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#27272a",
+    backgroundColor: "rgba(17,17,19,0.6)",
+    flexShrink: 0,
+  },
+  navCardLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 9,
+    letterSpacing: 1.5,
+    color: "#71717a",
+  },
+  navCardArrow: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: "#52525b",
+  },
+  // New from your brands section
+  section: {
+    gap: 12,
+    marginTop: 6,
+  },
+  sectionLabel: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 10,
+    letterSpacing: 1.8,
+    color: "#52525b",
+  },
+  sectionLoading: {
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+  fallbackNote: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: "#52525b",
+    lineHeight: 18,
+  },
+  productGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  productGridItem: {
+    width: "50%",
+    paddingBottom: 8,
+  },
+  seeAllBtn: {
+    paddingVertical: 4,
+    alignItems: "center",
+  },
+  seeAllText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 13,
+    color: "#71717a",
+  },
+  // Onboarding banner (section empty state)
   onboardingBanner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     borderRadius: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#3f3f46",
     backgroundColor: "rgba(17,17,19,0.6)",
-    marginBottom: 10,
     gap: 8,
   },
   onboardingBannerText: {
@@ -471,88 +438,5 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: "#a1a1aa",
     flexShrink: 0,
-  },
-  // Shop by Category card
-  categoriesCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 13,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#27272a",
-    backgroundColor: "rgba(17,17,19,0.6)",
-    marginBottom: 10,
-  },
-  categoriesLabel: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 9,
-    letterSpacing: 1.5,
-    color: "#71717a",
-  },
-  categoriesArrow: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
-    color: "#52525b",
-  },
-  // Brands card
-  brandsCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 13,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#27272a",
-    backgroundColor: "rgba(17,17,19,0.6)",
-    flexShrink: 0,
-  },
-  brandsLabel: {
-    fontFamily: "Inter_600SemiBold",
-    fontSize: 9,
-    letterSpacing: 1.5,
-    color: "#71717a",
-  },
-  brandsArrow: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
-    color: "#52525b",
-  },
-  // List
-  list: {
-    paddingHorizontal: 12,
-    paddingBottom: 32,
-  },
-  itemWrapper: {
-    flex: 1,
-    paddingBottom: 8,
-  },
-  loadingRow: {
-    paddingVertical: 40,
-    alignItems: "center",
-  },
-  footer: {
-    paddingVertical: 24,
-    alignItems: "center",
-  },
-  empty: {
-    alignItems: "center",
-    paddingTop: 60,
-    paddingHorizontal: 32,
-    gap: 8,
-  },
-  emptyText: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 15,
-    color: "#71717a",
-  },
-  emptySubtext: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 13,
-    color: "#3f3f46",
-    textAlign: "center",
-    lineHeight: 18,
   },
 });
