@@ -62,7 +62,7 @@ export default function BrandScreen() {
           index % 2 === 0 ? { paddingRight: 4 } : { paddingLeft: 4 },
         ]}
       >
-        <ProductCard product={item} cardWidth={cardWidth} />
+        <ProductCard product={item} cardWidth={cardWidth} showBrand={false} />
       </View>
     ),
     [cardWidth]

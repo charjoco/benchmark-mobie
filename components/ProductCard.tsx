@@ -6,41 +6,30 @@ import {
   StyleSheet,
   useWindowDimensions,
   Pressable,
-  Modal,
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { COLOR_BUCKET_HEX } from "@/lib/constants";
 import type { ProductRow, Colorway, ColorBucket } from "@/lib/types";
-import { SaveButton } from "@/components/SaveButton";
-import { WhereToBuySheet } from "@/components/WhereToBuySheet";
 import { useSelectedProduct } from "@/lib/SelectedProductContext";
 
 interface ProductCardProps {
   product: ProductRow;
   cardWidth?: number;
+  showBrand?: boolean;
 }
 
-export const ProductCard = memo(function ProductCard({ product, cardWidth: propCardWidth }: ProductCardProps) {
+export const ProductCard = memo(function ProductCard({
+  product,
+  cardWidth: propCardWidth,
+  showBrand = true,
+}: ProductCardProps) {
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = propCardWidth ?? (screenWidth - 16 - 8) / 2;
-  const imageHeight = cardWidth * 1.25; // 4:5 ratio
+  const imageHeight = cardWidth * 1.5; // 2:3 ratio
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [showWhereToBuy, setShowWhereToBuy] = useState(false);
   const { setProduct } = useSelectedProduct();
-
-  const hasSellers = (product.sellers ?? []).length > 0;
-
-  // Freshness
-  const lastUpdated = product.lastSeenAt ? new Date(product.lastSeenAt) : null;
-  const hoursAgo = lastUpdated ? Math.floor((Date.now() - lastUpdated.getTime()) / 3600000) : null;
-  const isStale = hoursAgo !== null && hoursAgo > 48;
-  const freshnessLabel = hoursAgo !== null
-    ? hoursAgo < 1 ? "< 1h ago"
-    : hoursAgo < 24 ? `${hoursAgo}h ago`
-    : `${Math.floor(hoursAgo / 24)}d ago`
-    : null;
 
   const colorways: Colorway[] = Array.isArray(product.colorways)
     ? product.colorways
@@ -60,9 +49,6 @@ export const ProductCard = memo(function ProductCard({ product, cardWidth: propC
   const displayCompare = active.compareAtPrice ?? product.compareAtPrice;
   const displayOnSale = active.onSale ?? product.onSale;
 
-  // Available sizes for the active colorway
-  const availableSizes = active.sizes.filter((s) => s.available).map((s) => s.size);
-
   function handleOpenProduct() {
     setProduct(product);
     router.push("/product");
@@ -74,7 +60,7 @@ export const ProductCard = memo(function ProductCard({ product, cardWidth: propC
 
   return (
     <View style={[styles.card, { width: cardWidth }]}>
-      {/* Product image — tapping opens browser */}
+      {/* Product image */}
       <TouchableOpacity onPress={handleOpenProduct} activeOpacity={0.9}>
         <View style={[styles.imageContainer, { height: imageHeight }]}>
           <Image
@@ -83,31 +69,29 @@ export const ProductCard = memo(function ProductCard({ product, cardWidth: propC
             contentFit="cover"
             transition={200}
           />
-          {/* Badges */}
-          <View style={styles.badges}>
-            {product.isNew && (
-              <View style={styles.badgeNew}>
-                <Text style={styles.badgeText}>NEW</Text>
-              </View>
-            )}
-            {displayOnSale && (
-              <View style={styles.badgeSale}>
-                <Text style={styles.badgeText}>SALE</Text>
-              </View>
-            )}
+          {/* Fallback placeholder shown while image loads or on error */}
+          <View style={styles.imagePlaceholder} pointerEvents="none">
+            <Text style={styles.imagePlaceholderText}>
+              {product.brand.toUpperCase().replace(/-/g, " ")}
+            </Text>
           </View>
-          <SaveButton brand={product.brand} externalId={product.externalId} />
         </View>
       </TouchableOpacity>
 
       {/* Card body */}
       <View style={styles.body}>
-        {/* Brand + title */}
-        <Text style={styles.brand} numberOfLines={1}>
-          {product.brand.toUpperCase().replace(/-/g, " ")}
-        </Text>
+        {showBrand && (
+          <Text style={styles.brand} numberOfLines={1}>
+            {product.brand.toUpperCase().replace(/-/g, " ")}
+          </Text>
+        )}
+
         <Text style={styles.title} numberOfLines={2}>
           {product.title}
+        </Text>
+
+        <Text style={styles.colorName} numberOfLines={1}>
+          {active.colorName}
         </Text>
 
         {/* Price */}
@@ -120,24 +104,10 @@ export const ProductCard = memo(function ProductCard({ product, cardWidth: propC
           )}
         </View>
 
-        {/* Available sizes */}
-        {availableSizes.length > 0 && (
-          <Text style={styles.sizes} numberOfLines={1}>
-            {availableSizes.join(" · ")}
-          </Text>
-        )}
-
-        {/* Freshness — stale warning or subtle timestamp */}
-        {freshnessLabel && (
-          <Text style={[styles.freshness, isStale && styles.freshnessStale]}>
-            {isStale ? `⚠ price may be outdated · ${freshnessLabel}` : `updated ${freshnessLabel}`}
-          </Text>
-        )}
-
-        {/* Color swatches — separate from the card Pressable */}
+        {/* Color swatches */}
         {colorways.length > 1 && (
           <View style={styles.swatches}>
-            {colorways.slice(0, 6).map((cw, i) => {
+            {colorways.slice(0, 5).map((cw, i) => {
               const hex = COLOR_BUCKET_HEX[cw.colorBucket as ColorBucket] ?? "#6b7280";
               const isLinear = hex.startsWith("linear");
               return (
@@ -155,36 +125,7 @@ export const ProductCard = memo(function ProductCard({ product, cardWidth: propC
             })}
           </View>
         )}
-
-        {/* Where to Buy — shown when multiple sellers carry this product */}
-        {hasSellers && (
-          <TouchableOpacity
-            style={styles.whereToBuyBtn}
-            onPress={() => setShowWhereToBuy(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.whereToBuyText}>
-              {(product.sellers.length + 1)} sellers · compare prices
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
-
-      {/* Where to Buy modal */}
-      <Modal
-        visible={showWhereToBuy}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowWhereToBuy(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowWhereToBuy(false)}
-        >
-          <WhereToBuySheet product={product} onClose={() => setShowWhereToBuy(false)} />
-        </TouchableOpacity>
-      </Modal>
     </View>
   );
 });
@@ -201,30 +142,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#1c1c1e",
     position: "relative",
   },
-  badges: {
+  imagePlaceholder: {
     position: "absolute",
-    top: 8,
-    left: 8,
-    flexDirection: "column",
-    gap: 4,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  badgeNew: {
-    backgroundColor: "#18181b",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 3,
-  },
-  badgeSale: {
-    backgroundColor: "#7f1d1d",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 3,
-  },
-  badgeText: {
+  imagePlaceholderText: {
     fontFamily: "Inter_600SemiBold",
     fontSize: 9,
-    letterSpacing: 0.8,
-    color: "#ffffff",
+    letterSpacing: 1.5,
+    color: "#3f3f46",
   },
   body: {
     padding: 10,
@@ -241,6 +172,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#e4e4e7",
     lineHeight: 18,
+  },
+  colorName: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    color: "#52525b",
   },
   priceRow: {
     flexDirection: "row",
@@ -262,21 +198,6 @@ const styles = StyleSheet.create({
     color: "#52525b",
     textDecorationLine: "line-through",
   },
-  sizes: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 11,
-    color: "#52525b",
-    marginTop: 1,
-  },
-  freshness: {
-    fontFamily: "Inter_400Regular",
-    fontSize: 9,
-    color: "#3f3f46",
-    marginTop: 3,
-  },
-  freshnessStale: {
-    color: "#92400e",
-  },
   swatches: {
     flexDirection: "row",
     gap: 5,
@@ -293,25 +214,5 @@ const styles = StyleSheet.create({
   swatchActive: {
     borderColor: "#ffffff",
     transform: [{ scale: 1.2 }],
-  },
-  whereToBuyBtn: {
-    marginTop: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#78501a",
-    alignItems: "center",
-  },
-  whereToBuyText: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 10,
-    letterSpacing: 0.3,
-    color: "#c27c28",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "center",
   },
 });
