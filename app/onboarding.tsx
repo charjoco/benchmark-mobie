@@ -160,6 +160,8 @@ export default function OnboardingScreen() {
                         styles.brandTileText,
                         selected && styles.brandTileTextSelected,
                       ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
                     >
                       {brand.label.toUpperCase()}
                     </Text>
@@ -384,7 +386,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   brandTile: {
-    paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 3,
     borderWidth: StyleSheet.hairlineWidth,
@@ -392,7 +393,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#111113",
     minWidth: "46%",
     flex: 1,
+    height: 56,
     alignItems: "center",
+    justifyContent: "center",
   },
   brandTileSelected: {
     borderColor: "#f4f4f5",

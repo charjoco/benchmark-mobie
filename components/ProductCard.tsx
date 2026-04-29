@@ -1,4 +1,4 @@
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import {
   View,
   Text,
@@ -31,6 +31,7 @@ export const ProductCard = memo(function ProductCard({
   const imageHeight = cardWidth * 1.5; // 2:3 ratio
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const { setProduct } = useSelectedProduct();
   const { preferences } = useAuth();
   const badgeText = computeBadge(product, preferences);
@@ -48,6 +49,10 @@ export const ProductCard = memo(function ProductCard({
     onSale: product.onSale,
     sizes: product.sizes,
   };
+
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [active.imageUrl]);
 
   const displayPrice = active.price ?? product.price;
   const displayCompare = active.compareAtPrice ?? product.compareAtPrice;
@@ -72,13 +77,15 @@ export const ProductCard = memo(function ProductCard({
             style={StyleSheet.absoluteFill}
             contentFit="cover"
             transition={200}
+            onLoad={() => setImageLoaded(true)}
           />
-          {/* Fallback placeholder shown while image loads or on error */}
-          <View style={styles.imagePlaceholder} pointerEvents="none">
-            <Text style={styles.imagePlaceholderText}>
-              {product.brand.toUpperCase().replace(/-/g, " ")}
-            </Text>
-          </View>
+          {!imageLoaded && (
+            <View style={styles.imagePlaceholder} pointerEvents="none">
+              <Text style={styles.imagePlaceholderText}>
+                {product.brand.toUpperCase().replace(/-/g, " ")}
+              </Text>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
 
@@ -91,7 +98,7 @@ export const ProductCard = memo(function ProductCard({
         )}
 
         <Text style={styles.title} numberOfLines={2}>
-          {product.title}
+          {product.title.split(" | ")[0]}
         </Text>
 
         <Text style={styles.colorName} numberOfLines={1}>
