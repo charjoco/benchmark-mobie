@@ -126,11 +126,7 @@ export default function ShopScreen() {
               <TouchableOpacity
                 style={styles.editorialCard}
                 activeOpacity={0.75}
-                onPress={() =>
-                  featuredArticle
-                    ? router.push(`/article?id=${featuredArticle.id}`)
-                    : router.push("/articles")
-                }
+                onPress={() => router.push("/articles")}
               >
                 {featuredArticle?.heroImage ? (
                   <Image

@@ -71,10 +71,12 @@ export default function OnboardingScreen() {
       return;
     }
     await refreshPreferences();
-    // RootNavigator will detect onboardingComplete === true and route to /(tabs) automatically.
-    // For the edit path (already in tabs), navigate back explicitly.
     if (onboardingComplete) {
+      // Edit mode: user came from profile, return there
       router.back();
+    } else {
+      // First-time completion: go to the app
+      router.replace("/(tabs)");
     }
   }
 

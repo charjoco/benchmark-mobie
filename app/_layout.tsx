@@ -35,8 +35,6 @@ function RootNavigator() {
       router.replace("/(auth)/login");
     } else if (session && !onboardingComplete && !inOnboarding) {
       router.replace("/onboarding");
-    } else if (session && onboardingComplete && inOnboarding) {
-      router.replace("/(tabs)");
     } else if (session && inAuthGroup) {
       router.replace("/(tabs)");
     } else if (isGuest && inAuthGroup) {
