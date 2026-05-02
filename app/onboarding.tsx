@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -35,6 +35,8 @@ export default function OnboardingScreen() {
   const [styleLean, setStyleLean] = useState<string[]>([]);
   const [priceComfort, setPriceComfort] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const callCountRef = useRef(0);
 
   // Pre-populate from existing preferences when editing
   useEffect(() => {
@@ -56,6 +58,11 @@ export default function OnboardingScreen() {
 
   async function handleFinish() {
     if (!user || !topSize || !bottomSize || !priceComfort) return;
+    // Synchronous ref guard prevents double-fire during React's async setState window
+    if (savingRef.current) return;
+    savingRef.current = true;
+    callCountRef.current += 1;
+    const call = callCountRef.current;
     setSaving(true);
     try {
       const { upsertError, updateError } = await saveOnboardingPreferences(user.id, {
@@ -67,18 +74,18 @@ export default function OnboardingScreen() {
         price_comfort: priceComfort,
       });
 
-      Alert.alert("DEBUG Step 1 (upsert)", JSON.stringify(upsertError ?? "null — ok", null, 2));
+      Alert.alert(`DEBUG Step 1 - call #${call}`, JSON.stringify(upsertError ?? "null — ok", null, 2));
       if (upsertError) return;
 
-      Alert.alert("DEBUG Step 2 (update)", JSON.stringify(updateError ?? "null — ok", null, 2));
+      Alert.alert(`DEBUG Step 2 - call #${call}`, JSON.stringify(updateError ?? "null — ok", null, 2));
       if (updateError) return;
 
       const { data: { session: currentSession } } = await supabase.auth.getSession();
-      Alert.alert("DEBUG session after save", JSON.stringify(currentSession?.user?.id ?? "NO SESSION", null, 2));
+      Alert.alert(`DEBUG session - call #${call}`, JSON.stringify(currentSession?.user?.id ?? "NO SESSION", null, 2));
 
       await refreshPreferences();
 
-      Alert.alert("DEBUG after refresh", `onboardingComplete = ${onboardingComplete}`);
+      Alert.alert(`DEBUG after refresh - call #${call}`, `onboardingComplete = ${onboardingComplete}`);
 
       if (onboardingComplete) {
         router.back();
@@ -87,8 +94,9 @@ export default function OnboardingScreen() {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      Alert.alert("Error", `Something went wrong: ${message}`);
+      Alert.alert(`Error - call #${call}`, `Something went wrong: ${message}`);
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
