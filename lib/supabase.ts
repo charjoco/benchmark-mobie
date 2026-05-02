@@ -91,9 +91,33 @@ export async function saveOnboardingPreferences(
   userId: string,
   data: OnboardingData
 ): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
-  const { error } = await supabase.from("user_preferences").upsert(
+  // Step 1: ensure a row exists for new users. ignoreDuplicates means if the
+  // row already exists this is a no-op — existing brands/sizes/colors are preserved.
+  await supabase.from("user_preferences").upsert(
     {
       user_id: userId,
+      brands: [],
+      sizes: [],
+      colors: [],
+      sort_by: "lastSeenAt",
+      on_sale: false,
+      is_new: false,
+      preferred_brands: [],
+      top_size: null,
+      bottom_size: null,
+      outerwear_size: null,
+      style_lean: [],
+      price_comfort: null,
+      onboarding_complete: false,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id", ignoreDuplicates: true }
+  );
+
+  // Step 2: write the onboarding fields on the now-guaranteed-existing row.
+  const { error } = await supabase
+    .from("user_preferences")
+    .update({
       preferred_brands: data.preferred_brands,
       top_size: data.top_size,
       bottom_size: data.bottom_size,
@@ -102,8 +126,8 @@ export async function saveOnboardingPreferences(
       price_comfort: data.price_comfort,
       onboarding_complete: true,
       updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" }
-  );
+    })
+    .eq("user_id", userId);
+
   return { error };
 }
