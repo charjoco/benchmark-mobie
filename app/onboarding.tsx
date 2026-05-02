@@ -58,28 +58,43 @@ export default function OnboardingScreen() {
     if (!user || !topSize || !bottomSize || !priceComfort) return;
     setSaving(true);
     try {
-      const { error } = await saveOnboardingPreferences(user.id, {
+      const payload = {
         preferred_brands: selectedBrands,
         top_size: topSize,
         bottom_size: bottomSize,
         outerwear_size: outerwearSize,
         style_lean: styleLean,
         price_comfort: priceComfort,
-      });
+      };
+      Alert.alert("DEBUG 1: Calling save", JSON.stringify(payload, null, 2));
+
+      const { error } = await saveOnboardingPreferences(user.id, payload);
+
       if (error) {
-        Alert.alert("Error", `Failed to save preferences: ${error.message}`);
+        Alert.alert("DEBUG 2: Save FAILED", JSON.stringify(error, null, 2));
         return;
       }
-      await refreshPreferences();
+
+      Alert.alert("DEBUG 3: Save succeeded", "Calling refreshPreferences now");
+
+      try {
+        await refreshPreferences();
+      } catch (refreshErr) {
+        Alert.alert("DEBUG 4: refreshPreferences threw", String(refreshErr));
+        throw refreshErr;
+      }
+
+      Alert.alert("DEBUG 5: After refresh", `onboardingComplete = ${onboardingComplete}\nAbout to navigate`);
+
       if (onboardingComplete) {
         router.back();
       } else {
         router.replace("/(tabs)");
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      Alert.alert("Error", `Something went wrong: ${message}`);
+      Alert.alert("DEBUG 6: catch block", String(err));
     } finally {
+      Alert.alert("DEBUG 7: finally reached", "setSaving(false) called");
       setSaving(false);
     }
   }
