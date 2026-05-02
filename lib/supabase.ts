@@ -91,19 +91,19 @@ export async function saveOnboardingPreferences(
   userId: string,
   data: OnboardingData
 ): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
-  const upsertPayload = {
-    user_id: userId,
-    ...data,
-    onboarding_complete: true,
-    updated_at: new Date().toISOString(),
-  };
-  console.log("[saveOnboardingPreferences] upserting to user_preferences:", JSON.stringify(upsertPayload));
-
-  const { data: responseData, error } = await supabase.from("user_preferences").upsert(
-    upsertPayload,
+  const { error } = await supabase.from("user_preferences").upsert(
+    {
+      user_id: userId,
+      preferred_brands: data.preferred_brands,
+      top_size: data.top_size,
+      bottom_size: data.bottom_size,
+      outerwear_size: data.outerwear_size,
+      style_lean: data.style_lean,
+      price_comfort: data.price_comfort,
+      onboarding_complete: true,
+      updated_at: new Date().toISOString(),
+    },
     { onConflict: "user_id" }
   );
-
-  console.log("[saveOnboardingPreferences] upsert complete — responseData:", JSON.stringify(responseData), "error:", JSON.stringify(error));
   return { error };
 }

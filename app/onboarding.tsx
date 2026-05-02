@@ -55,62 +55,31 @@ export default function OnboardingScreen() {
   }
 
   async function handleFinish() {
-    if (!user || !topSize || !bottomSize || !priceComfort) {
-      console.log("[handleFinish] early return — missing required fields", { user: !!user, topSize, bottomSize, priceComfort });
-      return;
-    }
-    console.log("[handleFinish] starting — user:", user.id);
+    if (!user || !topSize || !bottomSize || !priceComfort) return;
     setSaving(true);
     try {
-      const payload = {
+      const { error } = await saveOnboardingPreferences(user.id, {
         preferred_brands: selectedBrands,
         top_size: topSize,
         bottom_size: bottomSize,
         outerwear_size: outerwearSize,
         style_lean: styleLean,
         price_comfort: priceComfort,
-      };
-      console.log("[handleFinish] calling saveOnboardingPreferences with payload:", JSON.stringify(payload));
-
-      let data: any = undefined;
-      let error: any = undefined;
-      try {
-        const result = await saveOnboardingPreferences(user.id, payload);
-        data = (result as any).data;
-        error = result.error;
-      } catch (saveErr) {
-        console.error("[handleFinish] saveOnboardingPreferences THREW (not returned error):", saveErr);
-        throw saveErr;
-      }
-
-      console.log("[handleFinish] saveOnboardingPreferences returned — data:", JSON.stringify(data), "error:", JSON.stringify(error));
-
+      });
       if (error) {
-        console.error("[handleFinish] Supabase error code:", error.code, "message:", error.message, "details:", error.details, "hint:", error.hint);
         Alert.alert("Error", `Failed to save preferences: ${error.message}`);
         return;
       }
-
-      console.log("[handleFinish] save succeeded, calling refreshPreferences");
-      try {
-        await refreshPreferences();
-        console.log("[handleFinish] refreshPreferences completed");
-      } catch (refreshErr) {
-        console.error("[handleFinish] refreshPreferences THREW:", refreshErr);
-        throw refreshErr;
-      }
-
-      console.log("[handleFinish] onboardingComplete (closure value):", onboardingComplete, "— navigating");
+      await refreshPreferences();
       if (onboardingComplete) {
         router.back();
       } else {
         router.replace("/(tabs)");
       }
     } catch (err) {
-      console.error("[handleFinish] UNCAUGHT ERROR in handleFinish:", err);
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      const message = err instanceof Error ? err.message : "Unknown error";
+      Alert.alert("Error", `Something went wrong: ${message}`);
     } finally {
-      console.log("[handleFinish] finally — clearing spinner");
       setSaving(false);
     }
   }
