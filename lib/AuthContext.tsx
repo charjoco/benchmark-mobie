@@ -37,8 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function refreshPreferences() {
-    if (!session?.user) return;
-    const prefs = await loadPreferences(session.user.id);
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.user) return;
+    const prefs = await loadPreferences(currentSession.user.id);
     setPreferences(prefs);
   }
 
