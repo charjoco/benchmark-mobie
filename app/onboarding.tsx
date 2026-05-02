@@ -17,7 +17,7 @@ import {
   STYLE_LEAN_OPTIONS,
   PRICE_COMFORT_OPTIONS,
 } from "@/lib/constants";
-import { saveOnboardingPreferences } from "@/lib/supabase";
+import { saveOnboardingPreferences, supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 import { getTheme } from "@/lib/theme";
 
@@ -58,7 +58,7 @@ export default function OnboardingScreen() {
     if (!user || !topSize || !bottomSize || !priceComfort) return;
     setSaving(true);
     try {
-      const { error } = await saveOnboardingPreferences(user.id, {
+      const { upsertError, updateError } = await saveOnboardingPreferences(user.id, {
         preferred_brands: selectedBrands,
         top_size: topSize,
         bottom_size: bottomSize,
@@ -66,11 +66,20 @@ export default function OnboardingScreen() {
         style_lean: styleLean,
         price_comfort: priceComfort,
       });
-      if (error) {
-        Alert.alert("Error", `Failed to save preferences: ${error.message}`);
-        return;
-      }
+
+      Alert.alert("DEBUG Step 1 (upsert)", JSON.stringify(upsertError ?? "null — ok", null, 2));
+      if (upsertError) return;
+
+      Alert.alert("DEBUG Step 2 (update)", JSON.stringify(updateError ?? "null — ok", null, 2));
+      if (updateError) return;
+
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      Alert.alert("DEBUG session after save", JSON.stringify(currentSession?.user?.id ?? "NO SESSION", null, 2));
+
       await refreshPreferences();
+
+      Alert.alert("DEBUG after refresh", `onboardingComplete = ${onboardingComplete}`);
+
       if (onboardingComplete) {
         router.back();
       } else {
