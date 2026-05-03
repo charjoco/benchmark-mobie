@@ -32,28 +32,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isGuest, setIsGuest] = useState(false);
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES);
 
+  useEffect(() => {
+    console.log(`[auth/context] ${new Date().toISOString()} preferences state changed | onboarding_complete=${preferences.onboarding_complete} preferred_brands.length=${preferences.preferred_brands.length} brands.length=${preferences.brands.length}`);
+  }, [preferences]);
+
   function continueAsGuest() {
     setIsGuest(true);
   }
 
   async function refreshPreferences() {
+    console.log(`[auth/refreshPreferences] ${new Date().toISOString()} entry`);
     const { data: { session: currentSession } } = await supabase.auth.getSession();
-    if (!currentSession?.user) return;
+    console.log(`[auth/refreshPreferences] ${new Date().toISOString()} after getSession | session=${!!currentSession} userId=${currentSession?.user?.id ?? "none"}`);
+    if (!currentSession?.user) {
+      console.log(`[auth/refreshPreferences] ${new Date().toISOString()} no user — returning`);
+      return;
+    }
     const prefs = await loadPreferences(currentSession.user.id);
+    console.log(`[auth/refreshPreferences] ${new Date().toISOString()} after loadPreferences | onboarding_complete=${prefs.onboarding_complete}`);
     setPreferences(prefs);
+    console.log(`[auth/refreshPreferences] ${new Date().toISOString()} setPreferences called — exit`);
   }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log(`[auth/context] ${new Date().toISOString()} initial getSession | session=${!!session} userId=${session?.user?.id ?? "none"}`);
       setSession(session);
       setIsLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        console.log(`[auth/context] ${new Date().toISOString()} onAuthStateChange | event=${_event} session=${!!session} userId=${session?.user?.id ?? "none"}`);
         setSession(session);
         if (session?.user) {
           const prefs = await loadPreferences(session.user.id);
+          console.log(`[auth/context] ${new Date().toISOString()} onAuthStateChange loadPreferences done | onboarding_complete=${prefs.onboarding_complete}`);
           setPreferences(prefs);
         } else {
           setPreferences(DEFAULT_PREFERENCES);

@@ -18,29 +18,43 @@ import {
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { SavedProvider } from "@/lib/SavedContext";
 import { SelectedProductProvider } from "@/lib/SelectedProductContext";
+import { useAuthDeepLink } from "@/lib/useAuthDeepLink";
 
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { session, isLoading, isGuest, onboardingComplete } = useAuth();
   const segments = useSegments();
+  useAuthDeepLink();
 
   useEffect(() => {
-    if (isLoading) return;
+    const t = new Date().toISOString();
+    const inAuthGroup  = segments[0] === "(auth)";
+    const inOnboarding = segments[0] === "onboarding";
+    console.log(`[layout/RootNavigator] ${t} effect fired | isLoading=${isLoading} session=${!!session} isGuest=${isGuest} onboardingComplete=${onboardingComplete} segments[0]=${segments[0]} inAuthGroup=${inAuthGroup} inOnboarding=${inOnboarding}`);
 
-    const inAuthGroup   = segments[0] === "(auth)";
-    const inOnboarding  = segments[0] === "onboarding";
+    if (isLoading) {
+      console.log(`[layout/RootNavigator] ${t} → isLoading, skipping`);
+      return;
+    }
 
     if (!session && !isGuest && !inAuthGroup) {
+      console.log(`[layout/RootNavigator] ${t} → router.replace("/(auth)/login")`);
       router.replace("/(auth)/login");
     } else if (session && !onboardingComplete && !inOnboarding) {
+      console.log(`[layout/RootNavigator] ${t} → router.replace("/onboarding")`);
       router.replace("/onboarding");
     } else if (session && onboardingComplete && inOnboarding) {
+      console.log(`[layout/RootNavigator] ${t} → router.replace("/(tabs)") [onboarding complete guard]`);
       router.replace("/(tabs)");
     } else if (session && inAuthGroup) {
+      console.log(`[layout/RootNavigator] ${t} → router.replace("/(tabs)") [auth group]`);
       router.replace("/(tabs)");
     } else if (isGuest && inAuthGroup) {
+      console.log(`[layout/RootNavigator] ${t} → router.replace("/(tabs)") [guest]`);
       router.replace("/(tabs)");
+    } else {
+      console.log(`[layout/RootNavigator] ${t} → no condition matched, staying`);
     }
   }, [session, isLoading, isGuest, onboardingComplete, segments]);
 

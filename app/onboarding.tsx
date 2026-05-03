@@ -48,20 +48,32 @@ export default function OnboardingScreen() {
   }, []);
 
   function handleSkip() {
+    console.log(`[onboarding/handleSkip] ${new Date().toISOString()} entry | onboardingComplete=${onboardingComplete}`);
     if (onboardingComplete) {
+      console.log(`[onboarding/handleSkip] ${new Date().toISOString()} → router.back()`);
       router.back();
     } else {
+      console.log(`[onboarding/handleSkip] ${new Date().toISOString()} → router.replace("/(tabs)")`);
       router.replace("/(tabs)");
     }
+    console.log(`[onboarding/handleSkip] ${new Date().toISOString()} exit`);
   }
 
   async function handleFinish() {
-    if (!user || !topSize || !bottomSize || !priceComfort) return;
+    console.log(`[onboarding/handleFinish] ${new Date().toISOString()} entry | user=${!!user} topSize=${topSize} bottomSize=${bottomSize} priceComfort=${priceComfort} onboardingComplete=${onboardingComplete}`);
+    if (!user || !topSize || !bottomSize || !priceComfort) {
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} early return — missing required fields`);
+      return;
+    }
     // Synchronous ref guard prevents double-fire during React's async setState window
-    if (savingRef.current) return;
+    if (savingRef.current) {
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} early return — savingRef guard`);
+      return;
+    }
     savingRef.current = true;
     setSaving(true);
     try {
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} before saveOnboardingPreferences`);
       const { upsertError, updateError } = await saveOnboardingPreferences(user.id, {
         preferred_brands: selectedBrands,
         top_size: topSize,
@@ -70,14 +82,27 @@ export default function OnboardingScreen() {
         style_lean: styleLean,
         price_comfort: priceComfort,
       });
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} after saveOnboardingPreferences | upsertError=${JSON.stringify(upsertError)} updateError=${JSON.stringify(updateError)}`);
 
-      if (upsertError) return;
-      if (updateError) return;
+      if (upsertError) {
+        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} return — upsertError`);
+        return;
+      }
+      if (updateError) {
+        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} return — updateError`);
+        return;
+      }
 
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} before refreshPreferences | onboardingComplete=${onboardingComplete} (closure value)`);
       await refreshPreferences();
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} after refreshPreferences | onboardingComplete=${onboardingComplete} (closure — may be stale)`);
+
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} → router.replace("/(tabs)")`);
       router.replace("/(tabs)");
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} exit`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} catch — ${message}`);
       Alert.alert("Something went wrong", message);
     } finally {
       savingRef.current = false;

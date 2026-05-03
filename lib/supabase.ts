@@ -17,6 +17,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    flowType: "pkce",
   },
 });
 
@@ -57,12 +58,13 @@ const PREFS_SELECT =
   "brands, sizes, colors, sort_by, on_sale, is_new, preferred_brands, top_size, bottom_size, outerwear_size, style_lean, price_comfort, onboarding_complete";
 
 export async function loadPreferences(userId: string): Promise<UserPreferences> {
+  console.log(`[supabase/loadPreferences] ${new Date().toISOString()} entry | userId=${userId}`);
   const { data, error } = await supabase
     .from("user_preferences")
     .select(PREFS_SELECT)
     .eq("user_id", userId)
     .single();
-
+  console.log(`[supabase/loadPreferences] ${new Date().toISOString()} result | error=${JSON.stringify(error)} onboarding_complete=${data?.onboarding_complete ?? "null"}`);
   if (error || !data) return DEFAULT_PREFERENCES;
   return data as UserPreferences;
 }
@@ -71,10 +73,12 @@ export async function savePreferences(
   userId: string,
   prefs: UserPreferences
 ): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
+  console.log(`[supabase/savePreferences] ${new Date().toISOString()} entry | userId=${userId} onboarding_complete=${prefs.onboarding_complete}`);
   const { error } = await supabase.from("user_preferences").upsert(
     { user_id: userId, ...prefs, updated_at: new Date().toISOString() },
     { onConflict: "user_id" }
   );
+  console.log(`[supabase/savePreferences] ${new Date().toISOString()} result | error=${JSON.stringify(error)}`);
   return { error };
 }
 
@@ -94,6 +98,8 @@ export async function saveOnboardingPreferences(
   upsertError: import("@supabase/supabase-js").PostgrestError | null;
   updateError: import("@supabase/supabase-js").PostgrestError | null;
 }> {
+  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} entry | userId=${userId}`);
+
   // Step 1: ensure a row exists for new users. ignoreDuplicates means if the
   // row already exists this is a no-op — existing brands/sizes/colors are preserved.
   const { error: upsertError } = await supabase.from("user_preferences").upsert(
@@ -116,6 +122,7 @@ export async function saveOnboardingPreferences(
     },
     { onConflict: "user_id", ignoreDuplicates: true }
   );
+  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} after upsert (step 1) | upsertError=${JSON.stringify(upsertError)}`);
 
   if (upsertError) return { upsertError, updateError: null };
 
@@ -133,6 +140,7 @@ export async function saveOnboardingPreferences(
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", userId);
+  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} after update (step 2) | updateError=${JSON.stringify(updateError)}`);
 
   return { upsertError: null, updateError };
 }

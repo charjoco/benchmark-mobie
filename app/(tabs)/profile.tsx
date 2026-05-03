@@ -53,17 +53,29 @@ export default function ProfileScreen() {
   }
 
   async function handleSave() {
-    if (!user) return;
+    console.log(`[profile/handleSave] ${new Date().toISOString()} entry | user=${!!user} draft.onboarding_complete=${draft.onboarding_complete}`);
+    if (!user) {
+      console.log(`[profile/handleSave] ${new Date().toISOString()} early return — no user`);
+      return;
+    }
     setSaving(true);
     try {
+      console.log(`[profile/handleSave] ${new Date().toISOString()} before savePreferences`);
       const { error } = await savePreferences(user.id, draft);
+      console.log(`[profile/handleSave] ${new Date().toISOString()} after savePreferences | error=${JSON.stringify(error)}`);
       if (error) {
+        console.log(`[profile/handleSave] ${new Date().toISOString()} save failed — alerting user`);
         Alert.alert("Error", "Failed to save preferences. Please try again.");
         return;
       }
+      console.log(`[profile/handleSave] ${new Date().toISOString()} before refreshPreferences`);
       await refreshPreferences();
+      console.log(`[profile/handleSave] ${new Date().toISOString()} after refreshPreferences`);
       Alert.alert("Saved", "Your preferences have been saved.");
-    } catch {
+      console.log(`[profile/handleSave] ${new Date().toISOString()} exit`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.log(`[profile/handleSave] ${new Date().toISOString()} catch — ${message}`);
       Alert.alert("Error", "Failed to save preferences. Please try again.");
     } finally {
       setSaving(false);
