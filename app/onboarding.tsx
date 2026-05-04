@@ -85,12 +85,12 @@ export default function OnboardingScreen() {
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} after saveOnboardingPreferences | upsertError=${JSON.stringify(upsertError)} updateError=${JSON.stringify(updateError)}`);
 
       if (upsertError) {
-        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} return — upsertError`);
-        return;
+        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} throw — upsertError`);
+        throw upsertError;
       }
       if (updateError) {
-        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} return — updateError`);
-        return;
+        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} throw — updateError`);
+        throw updateError;
       }
 
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} before refreshPreferences | onboardingComplete=${onboardingComplete} (closure value)`);

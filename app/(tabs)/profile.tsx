@@ -64,9 +64,8 @@ export default function ProfileScreen() {
       const { error } = await savePreferences(user.id, draft);
       console.log(`[profile/handleSave] ${new Date().toISOString()} after savePreferences | error=${JSON.stringify(error)}`);
       if (error) {
-        console.log(`[profile/handleSave] ${new Date().toISOString()} save failed — alerting user`);
-        Alert.alert("Error", "Failed to save preferences. Please try again.");
-        return;
+        console.log(`[profile/handleSave] ${new Date().toISOString()} throw — savePreferences error`);
+        throw error;
       }
       console.log(`[profile/handleSave] ${new Date().toISOString()} before refreshPreferences`);
       await refreshPreferences();
