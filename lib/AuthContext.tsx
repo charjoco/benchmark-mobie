@@ -12,6 +12,7 @@ type AuthContextType = {
   continueAsGuest: () => void;
   signOut: () => Promise<void>;
   refreshPreferences: () => Promise<void>;
+  updatePreferences: (partial: Partial<UserPreferences>) => void;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   continueAsGuest: () => {},
   signOut: async () => {},
   refreshPreferences: async () => {},
+  updatePreferences: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -38,6 +40,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   function continueAsGuest() {
     setIsGuest(true);
+  }
+
+  function updatePreferences(partial: Partial<UserPreferences>) {
+    setPreferences(prev => ({ ...prev, ...partial }));
   }
 
   async function refreshPreferences() {
@@ -97,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         continueAsGuest,
         signOut,
         refreshPreferences,
+        updatePreferences,
       }}
     >
       {children}

@@ -12,7 +12,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/AuthContext";
 import { savePreferences, UserPreferences } from "@/lib/supabase";
-import { withTimeout } from "@/lib/withTimeout";
 import { BRANDS, SIZES, COLOR_BUCKETS } from "@/lib/constants";
 import { COLOR_BUCKET_HEX } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
@@ -21,7 +20,7 @@ import type { ColorBucket } from "@/lib/types";
 const theme = getTheme();
 
 export default function ProfileScreen() {
-  const { user, preferences, signOut, refreshPreferences } = useAuth();
+  const { user, preferences, signOut, updatePreferences } = useAuth();
   const [draft, setDraft] = useState<UserPreferences>(preferences);
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -68,9 +67,9 @@ export default function ProfileScreen() {
         console.log(`[profile/handleSave] ${new Date().toISOString()} throw — savePreferences error`);
         throw error;
       }
-      console.log(`[profile/handleSave] ${new Date().toISOString()} before refreshPreferences`);
-      await withTimeout(refreshPreferences(), 30000);
-      console.log(`[profile/handleSave] ${new Date().toISOString()} after refreshPreferences`);
+      console.log(`[profile/handleSave] ${new Date().toISOString()} calling updatePreferences directly`);
+      updatePreferences(draft);
+      console.log(`[profile/handleSave] ${new Date().toISOString()} updatePreferences called`);
       Alert.alert("Saved", "Your preferences have been saved.");
       console.log(`[profile/handleSave] ${new Date().toISOString()} exit`);
     } catch (err) {

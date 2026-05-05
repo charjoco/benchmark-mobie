@@ -20,13 +20,12 @@ import {
 import { saveOnboardingPreferences } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 import { getTheme } from "@/lib/theme";
-import { withTimeout } from "@/lib/withTimeout";
 
 const theme = getTheme();
 const TOTAL_STEPS = 5;
 
 export default function OnboardingScreen() {
-  const { user, preferences, onboardingComplete, refreshPreferences } = useAuth();
+  const { user, preferences, onboardingComplete, updatePreferences } = useAuth();
 
   const [step, setStep] = useState(0);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
@@ -94,9 +93,17 @@ export default function OnboardingScreen() {
         throw updateError;
       }
 
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} before refreshPreferences | onboardingComplete=${onboardingComplete} (closure value)`);
-      await withTimeout(refreshPreferences(), 30000);
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} after refreshPreferences | onboardingComplete=${onboardingComplete} (closure — may be stale)`);
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} calling updatePreferences directly`);
+      updatePreferences({
+        preferred_brands: selectedBrands,
+        top_size: topSize,
+        bottom_size: bottomSize,
+        outerwear_size: outerwearSize,
+        style_lean: styleLean,
+        price_comfort: priceComfort,
+        onboarding_complete: true,
+      });
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} updatePreferences called`);
 
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} → router.replace("/(tabs)")`);
       router.replace("/(tabs)");
