@@ -69,7 +69,7 @@ export default function ProfileScreen() {
         throw error;
       }
       console.log(`[profile/handleSave] ${new Date().toISOString()} before refreshPreferences`);
-      await withTimeout(refreshPreferences(), 8000);
+      await withTimeout(refreshPreferences(), 30000);
       console.log(`[profile/handleSave] ${new Date().toISOString()} after refreshPreferences`);
       Alert.alert("Saved", "Your preferences have been saved.");
       console.log(`[profile/handleSave] ${new Date().toISOString()} exit`);

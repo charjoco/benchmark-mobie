@@ -42,12 +42,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function refreshPreferences() {
     console.log(`[auth/refreshPreferences] ${new Date().toISOString()} entry`);
+    console.log(`[auth/refreshPreferences] ${new Date().toISOString()} before getSession`);
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     console.log(`[auth/refreshPreferences] ${new Date().toISOString()} after getSession | session=${!!currentSession} userId=${currentSession?.user?.id ?? "none"}`);
     if (!currentSession?.user) {
       console.log(`[auth/refreshPreferences] ${new Date().toISOString()} no user — returning`);
       return;
     }
+    console.log(`[auth/refreshPreferences] ${new Date().toISOString()} before loadPreferences | userId=${currentSession.user.id}`);
     const prefs = await loadPreferences(currentSession.user.id);
     console.log(`[auth/refreshPreferences] ${new Date().toISOString()} after loadPreferences | onboarding_complete=${prefs.onboarding_complete}`);
     setPreferences(prefs);

@@ -95,7 +95,7 @@ export default function OnboardingScreen() {
       }
 
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} before refreshPreferences | onboardingComplete=${onboardingComplete} (closure value)`);
-      await withTimeout(refreshPreferences(), 8000);
+      await withTimeout(refreshPreferences(), 30000);
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} after refreshPreferences | onboardingComplete=${onboardingComplete} (closure — may be stale)`);
 
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} → router.replace("/(tabs)")`);

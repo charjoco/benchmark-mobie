@@ -59,6 +59,7 @@ const PREFS_SELECT =
 
 export async function loadPreferences(userId: string): Promise<UserPreferences> {
   console.log(`[supabase/loadPreferences] ${new Date().toISOString()} entry | userId=${userId}`);
+  console.log(`[supabase/loadPreferences] ${new Date().toISOString()} before query`);
   const { data, error } = await supabase
     .from("user_preferences")
     .select(PREFS_SELECT)
