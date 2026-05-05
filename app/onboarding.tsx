@@ -20,6 +20,7 @@ import {
 import { saveOnboardingPreferences } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 import { getTheme } from "@/lib/theme";
+import { withTimeout } from "@/lib/withTimeout";
 
 const theme = getTheme();
 const TOTAL_STEPS = 5;
@@ -94,7 +95,7 @@ export default function OnboardingScreen() {
       }
 
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} before refreshPreferences | onboardingComplete=${onboardingComplete} (closure value)`);
-      await refreshPreferences();
+      await withTimeout(refreshPreferences(), 8000);
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} after refreshPreferences | onboardingComplete=${onboardingComplete} (closure — may be stale)`);
 
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} → router.replace("/(tabs)")`);

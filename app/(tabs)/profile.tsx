@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/AuthContext";
 import { savePreferences, UserPreferences } from "@/lib/supabase";
+import { withTimeout } from "@/lib/withTimeout";
 import { BRANDS, SIZES, COLOR_BUCKETS } from "@/lib/constants";
 import { COLOR_BUCKET_HEX } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
@@ -68,7 +69,7 @@ export default function ProfileScreen() {
         throw error;
       }
       console.log(`[profile/handleSave] ${new Date().toISOString()} before refreshPreferences`);
-      await refreshPreferences();
+      await withTimeout(refreshPreferences(), 8000);
       console.log(`[profile/handleSave] ${new Date().toISOString()} after refreshPreferences`);
       Alert.alert("Saved", "Your preferences have been saved.");
       console.log(`[profile/handleSave] ${new Date().toISOString()} exit`);
