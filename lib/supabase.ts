@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import * as SecureStore from "expo-secure-store";
+import { withTimeout } from "./withTimeout";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
@@ -75,9 +76,12 @@ export async function savePreferences(
   prefs: UserPreferences
 ): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
   console.log(`[supabase/savePreferences] ${new Date().toISOString()} entry | userId=${userId} onboarding_complete=${prefs.onboarding_complete}`);
-  const { error } = await supabase.from("user_preferences").upsert(
-    { user_id: userId, ...prefs, updated_at: new Date().toISOString() },
-    { onConflict: "user_id" }
+  const { error } = await withTimeout(
+    Promise.resolve(supabase.from("user_preferences").upsert(
+      { user_id: userId, ...prefs, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    )),
+    8000
   );
   console.log(`[supabase/savePreferences] ${new Date().toISOString()} result | error=${JSON.stringify(error)}`);
   return { error };
@@ -103,44 +107,50 @@ export async function saveOnboardingPreferences(
 
   // Step 1: ensure a row exists for new users. ignoreDuplicates means if the
   // row already exists this is a no-op — existing brands/sizes/colors are preserved.
-  const { error: upsertError } = await supabase.from("user_preferences").upsert(
-    {
-      user_id: userId,
-      brands: [],
-      sizes: [],
-      colors: [],
-      sort_by: "lastSeenAt",
-      on_sale: false,
-      is_new: false,
-      preferred_brands: [],
-      top_size: null,
-      bottom_size: null,
-      outerwear_size: null,
-      style_lean: [],
-      price_comfort: null,
-      onboarding_complete: false,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id", ignoreDuplicates: true }
+  const { error: upsertError } = await withTimeout(
+    Promise.resolve(supabase.from("user_preferences").upsert(
+      {
+        user_id: userId,
+        brands: [],
+        sizes: [],
+        colors: [],
+        sort_by: "lastSeenAt",
+        on_sale: false,
+        is_new: false,
+        preferred_brands: [],
+        top_size: null,
+        bottom_size: null,
+        outerwear_size: null,
+        style_lean: [],
+        price_comfort: null,
+        onboarding_complete: false,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id", ignoreDuplicates: true }
+    )),
+    8000
   );
   console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} after upsert (step 1) | upsertError=${JSON.stringify(upsertError)}`);
 
   if (upsertError) return { upsertError, updateError: null };
 
   // Step 2: write the onboarding fields on the now-guaranteed-existing row.
-  const { error: updateError } = await supabase
-    .from("user_preferences")
-    .update({
-      preferred_brands: data.preferred_brands,
-      top_size: data.top_size,
-      bottom_size: data.bottom_size,
-      outerwear_size: data.outerwear_size,
-      style_lean: data.style_lean,
-      price_comfort: data.price_comfort,
-      onboarding_complete: true,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", userId);
+  const { error: updateError } = await withTimeout(
+    Promise.resolve(supabase
+      .from("user_preferences")
+      .update({
+        preferred_brands: data.preferred_brands,
+        top_size: data.top_size,
+        bottom_size: data.bottom_size,
+        outerwear_size: data.outerwear_size,
+        style_lean: data.style_lean,
+        price_comfort: data.price_comfort,
+        onboarding_complete: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)),
+    8000
+  );
   console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} after update (step 2) | updateError=${JSON.stringify(updateError)}`);
 
   return { upsertError: null, updateError };
