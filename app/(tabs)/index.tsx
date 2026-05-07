@@ -75,7 +75,7 @@ export default function ShopScreen() {
         {/* Benchmark header */}
         <View style={styles.header}>
           <View style={[styles.headerRule, { backgroundColor: theme.headerRuleColor }]} />
-          <Text style={styles.headerTitle}>BENCHMARK</Text>
+          <Text style={styles.headerTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>BENCHMARK</Text>
           <View style={[styles.headerRule, { backgroundColor: theme.headerRuleColor }]} />
           <View style={styles.taglineRow}>
             <View style={[styles.taglineDash, { backgroundColor: theme.taglineDashColor }]} />
