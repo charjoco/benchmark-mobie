@@ -3,7 +3,7 @@ import type { UserPreferences } from "./supabase";
 
 function getRelevantSize(category: string, prefs: UserPreferences): string | null {
   if (category === "shorts" || category === "pants") return prefs.bottom_size;
-  if (category === "jackets") return prefs.outerwear_size ?? prefs.top_size;
+  if (category === "jackets" || category === "vests") return prefs.outerwear_size ?? prefs.top_size;
   return prefs.top_size;
 }
 

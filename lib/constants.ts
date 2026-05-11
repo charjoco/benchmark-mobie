@@ -25,6 +25,7 @@ export type CategoryLabel = { key: AppCategory; label: string };
 
 export const ALL_CATEGORIES: CategoryLabel[] = [
   { key: "jackets", label: "Jackets" },
+  { key: "vests", label: "Vests" },
   { key: "polos", label: "Polos" },
   { key: "shirts", label: "Shirts" },
   { key: "longsleeve", label: "Long Sleeve" },
