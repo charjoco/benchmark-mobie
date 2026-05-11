@@ -7,8 +7,8 @@ import type { AppCategory, ProductRow } from "@/lib/types";
 const STYLE_LEAN_CATEGORIES: Record<string, AppCategory[]> = {
   "performance":     ["shorts", "hoodies", "zips", "pants", "longsleeve"],
   "elevated-basics": ["shirts", "polos", "longsleeve", "sweaters", "pants"],
-  "smart-casual":    ["shirts", "polos", "pants", "jackets", "sweaters"],
-  "golf":            ["polos", "pants", "jackets", "shorts"],
+  "smart-casual":    ["shirts", "polos", "pants", "jackets", "vests", "sweaters"],
+  "golf":            ["polos", "pants", "jackets", "vests", "shorts"],
 };
 
 function getRelevantSize(category: string, prefs: UserPreferences): string | null {
