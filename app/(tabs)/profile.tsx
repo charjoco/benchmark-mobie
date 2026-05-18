@@ -12,10 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/AuthContext";
 import { savePreferences, UserPreferences } from "@/lib/supabase";
-import { BRANDS, SIZES, COLOR_BUCKETS } from "@/lib/constants";
-import { COLOR_BUCKET_HEX } from "@/lib/constants";
+import { BRANDS, SIZES, APP_COLORS, APP_COLOR_HEX } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
-import type { ColorBucket } from "@/lib/types";
 
 const theme = getTheme();
 
@@ -185,8 +183,8 @@ export default function ProfileScreen() {
           <Text style={styles.sectionLabel}>PREFERRED COLORS</Text>
           <Text style={styles.sectionHint}>Pre-filter your feed to these colors.</Text>
           <View style={styles.colorGrid}>
-            {COLOR_BUCKETS.map((color) => {
-              const hex = COLOR_BUCKET_HEX[color as ColorBucket] ?? "#6b7280";
+            {APP_COLORS.map((color) => {
+              const hex = APP_COLOR_HEX[color] ?? "#6b7280";
               const active = draft.colors.includes(color);
               return (
                 <TouchableOpacity
@@ -202,7 +200,7 @@ export default function ProfileScreen() {
                     ]}
                   />
                   <Text style={[styles.colorLabel, active && styles.colorLabelActive]}>
-                    {color}
+                    {color.charAt(0).toUpperCase() + color.slice(1)}
                   </Text>
                 </TouchableOpacity>
               );

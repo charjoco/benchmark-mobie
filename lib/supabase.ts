@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { APP_COLORS } from "./constants";
 import * as SecureStore from "expo-secure-store";
 import { withTimeout } from "./withTimeout";
 
@@ -68,7 +69,14 @@ export async function loadPreferences(userId: string): Promise<UserPreferences> 
     .single();
   console.log(`[supabase/loadPreferences] ${new Date().toISOString()} result | error=${JSON.stringify(error)} onboarding_complete=${data?.onboarding_complete ?? "null"}`);
   if (error || !data) return DEFAULT_PREFERENCES;
-  return data as UserPreferences;
+  const prefs = data as UserPreferences;
+  // Normalize colors saved under the old Title Case system ("Navy" → "navy").
+  // Filter removes any values that don't exist in the current canonical set (e.g. "Other").
+  // APP_COLORS is the picker list and excludes "multi"; add it back so stored preferences
+  // that include "multi" (saved under the old system) are not incorrectly dropped.
+  const VALID_COLORS = new Set<string>([...APP_COLORS, "multi"]);
+  prefs.colors = prefs.colors.map((c) => c.toLowerCase()).filter((c) => VALID_COLORS.has(c));
+  return prefs;
 }
 
 export async function savePreferences(

@@ -10,21 +10,25 @@ export type AppCategory =
   | "jackets"
   | "vests";
 
-export type ColorBucket =
-  | "Black"
-  | "White"
-  | "Grey"
-  | "Navy"
-  | "Blue"
-  | "Green"
-  | "Brown"
-  | "Red"
-  | "Orange"
-  | "Yellow"
-  | "Purple"
-  | "Pink"
-  | "Multi"
-  | "Other";
+export type AppColor =
+  | "black"
+  | "white"
+  | "grey"
+  | "navy"
+  | "blue"
+  | "teal"
+  | "green"
+  | "olive"
+  | "brown"
+  | "tan"
+  | "beige"
+  | "red"
+  | "orange"
+  | "yellow"
+  | "purple"
+  | "pink"
+  | "burgundy"
+  | "multi";
 
 export interface SizeVariant {
   size: string;
@@ -34,6 +38,7 @@ export interface SizeVariant {
 export interface Colorway {
   colorName: string;
   colorBucket: string;
+  appColor?: AppColor | null;
   imageUrl: string;
   price: number;
   compareAtPrice: number | null;
@@ -69,6 +74,7 @@ export interface ProductRow {
   onSale: boolean;
   colorways: Colorway[];
   colorBuckets: string;
+  availableColors?: string;
   sizes: SizeVariant[];
   inStock: boolean;
   isNew: boolean;
@@ -172,7 +178,7 @@ export interface FilterState {
   category: AppCategory | null;
   feedMode: FeedMode | null;
   brands: string[];
-  colors: ColorBucket[];
+  colors: AppColor[];
   sizes: string[];
   onSale: boolean;
   isNew: boolean;

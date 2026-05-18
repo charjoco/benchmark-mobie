@@ -1,24 +1,28 @@
-import type { AppCategory, ColorBucket } from "./types";
+import type { AppCategory, AppColor } from "./types";
 
 // Use the Mac's LAN IP so iOS Simulator can reach the Next.js backend.
 // If you change networks, update this to match: ipconfig getifaddr en0
 export const API_BASE_URL = "https://benchmark-backend-production.up.railway.app";
 
-export const COLOR_BUCKET_HEX: Record<ColorBucket, string> = {
-  Black: "#1a1a1a",
-  White: "#f5f5f5",
-  Grey: "#9ca3af",
-  Navy: "#1e3a5f",
-  Blue: "#3b82f6",
-  Green: "#22c55e",
-  Brown: "#92400e",
-  Red: "#ef4444",
-  Orange: "#f97316",
-  Yellow: "#eab308",
-  Purple: "#a855f7",
-  Pink: "#ec4899",
-  Multi: "linear-gradient(135deg, #ef4444, #3b82f6, #22c55e)",
-  Other: "#6b7280",
+export const APP_COLOR_HEX: Record<AppColor, string> = {
+  black:    "#1a1a1a",
+  white:    "#f5f5f5",
+  grey:     "#9ca3af",
+  navy:     "#1e3a5f",
+  blue:     "#3b82f6",
+  teal:     "#14b8a6",
+  green:    "#22c55e",
+  olive:    "#6b7c3c",
+  brown:    "#92400e",
+  tan:      "#b5956b",
+  beige:    "#d4b483",
+  red:      "#ef4444",
+  orange:   "#f97316",
+  yellow:   "#eab308",
+  purple:   "#a855f7",
+  pink:     "#ec4899",
+  burgundy: "#881337",
+  multi:    "linear-gradient(135deg, #ef4444, #3b82f6, #22c55e)",
 };
 
 export type CategoryLabel = { key: AppCategory; label: string };
@@ -74,19 +78,24 @@ export const PRICE_COMFORT_OPTIONS: { key: string; label: string; description: s
   { key: "150-plus",  label: "$150+",     description: "Best of the best, no compromise" },
 ];
 
-export const COLOR_BUCKETS: ColorBucket[] = [
-  "Black",
-  "White",
-  "Grey",
-  "Navy",
-  "Blue",
-  "Green",
-  "Brown",
-  "Red",
-  "Orange",
-  "Yellow",
-  "Purple",
-  "Pink",
+export const APP_COLORS: AppColor[] = [
+  "black",
+  "white",
+  "grey",
+  "navy",
+  "blue",
+  "teal",
+  "green",
+  "olive",
+  "brown",
+  "tan",
+  "beige",
+  "red",
+  "orange",
+  "yellow",
+  "purple",
+  "pink",
+  "burgundy",
 ];
 
 export const SORT_OPTIONS: { value: string; label: string }[] = [

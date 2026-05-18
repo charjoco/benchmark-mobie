@@ -5,8 +5,8 @@ import BottomSheet, {
   BottomSheetBackdrop,
   type BottomSheetBackdropProps,
 } from "@gorhom/bottom-sheet";
-import { BRANDS, SIZES, COLOR_BUCKETS, SORT_OPTIONS, COLOR_BUCKET_HEX, ALL_CATEGORIES } from "@/lib/constants";
-import type { FilterState, ColorBucket, AppCategory } from "@/lib/types";
+import { BRANDS, SIZES, APP_COLORS, SORT_OPTIONS, APP_COLOR_HEX, ALL_CATEGORIES } from "@/lib/constants";
+import type { FilterState, AppColor, AppCategory } from "@/lib/types";
 
 interface FilterSheetProps {
   filters: FilterState;
@@ -62,7 +62,7 @@ export const FilterSheet = forwardRef<BottomSheet, FilterSheetProps>(
       }));
     }
 
-    function toggleColor(color: ColorBucket) {
+    function toggleColor(color: AppColor) {
       setDraft((d) => ({
         ...d,
         colors: d.colors.includes(color)
@@ -228,8 +228,8 @@ export const FilterSheet = forwardRef<BottomSheet, FilterSheetProps>(
           {/* Colors */}
           <Section title="Color">
             <View style={styles.colorGrid}>
-              {COLOR_BUCKETS.map((color) => {
-                const hex = COLOR_BUCKET_HEX[color];
+              {APP_COLORS.map((color) => {
+                const hex = APP_COLOR_HEX[color];
                 const isLinear = hex.startsWith("linear");
                 const isSelected = draft.colors.includes(color);
                 return (

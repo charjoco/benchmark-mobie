@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { COLOR_BUCKET_HEX } from "@/lib/constants";
-import type { ProductRow, Colorway, ColorBucket } from "@/lib/types";
+import { APP_COLOR_HEX } from "@/lib/constants";
+import type { ProductRow, Colorway } from "@/lib/types";
 import { useSelectedProduct } from "@/lib/SelectedProductContext";
 import { useAuth } from "@/lib/AuthContext";
 import { computeBadge } from "@/lib/fitBadge";
@@ -124,7 +124,7 @@ export const ProductCard = memo(function ProductCard({
         {colorways.length > 1 && (
           <View style={styles.swatches}>
             {colorways.slice(0, 5).map((cw, i) => {
-              const hex = COLOR_BUCKET_HEX[cw.colorBucket as ColorBucket] ?? "#6b7280";
+              const hex = cw.appColor ? (APP_COLOR_HEX[cw.appColor] ?? "#6b7280") : "#6b7280";
               const isLinear = hex.startsWith("linear");
               return (
                 <Pressable
