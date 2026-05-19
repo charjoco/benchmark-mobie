@@ -74,7 +74,7 @@ export default function OnboardingScreen() {
     setSaving(true);
     try {
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} before saveOnboardingPreferences`);
-      const { upsertError, updateError } = await saveOnboardingPreferences(user.id, {
+      const { error } = await saveOnboardingPreferences(user.id, {
         preferred_brands: selectedBrands,
         top_size: topSize,
         bottom_size: bottomSize,
@@ -82,15 +82,11 @@ export default function OnboardingScreen() {
         style_lean: styleLean,
         price_comfort: priceComfort,
       });
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} after saveOnboardingPreferences | upsertError=${JSON.stringify(upsertError)} updateError=${JSON.stringify(updateError)}`);
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} after saveOnboardingPreferences | error=${JSON.stringify(error)}`);
 
-      if (upsertError) {
-        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} throw — upsertError`);
-        throw upsertError;
-      }
-      if (updateError) {
-        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} throw — updateError`);
-        throw updateError;
+      if (error) {
+        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} throw — rpc error`);
+        throw error;
       }
 
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} calling updatePreferences directly`);
