@@ -38,6 +38,7 @@ export const ALL_CATEGORIES: CategoryLabel[] = [
   { key: "zips", label: "Zips" },
   { key: "shorts", label: "Shorts" },
   { key: "pants", label: "Pants" },
+  { key: "denim", label: "Denim" },
 ];
 
 export const BRANDS: { key: string; label: string }[] = [
