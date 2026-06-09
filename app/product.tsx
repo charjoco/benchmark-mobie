@@ -17,7 +17,8 @@ import { useSaved } from "@/lib/SavedContext";
 import { trackProductView, trackProductTap } from "@/lib/analytics";
 import type { Colorway, Seller } from "@/lib/types";
 
-function formatPrice(p: number) {
+function formatPrice(p: number | null | undefined) {
+  if (p == null || !isFinite(p)) return "—";
   return `$${p % 1 === 0 ? p.toFixed(0) : p.toFixed(2)}`;
 }
 
@@ -97,8 +98,9 @@ export default function ProductDetailScreen() {
     compareAtPrice: displayCompare,
     onSale: displayOnSale,
   };
-  const allSellers: Seller[] = [brandSeller, ...(product.sellers ?? [])].sort(
-    (a, b) => a.price - b.price
+  const extraSellers: Seller[] = Array.isArray(product.sellers) ? product.sellers : [];
+  const allSellers: Seller[] = [brandSeller, ...extraSellers].sort(
+    (a, b) => (a.price ?? 0) - (b.price ?? 0)
   );
 
   const imageHeight = screenWidth * 1.1;
@@ -216,11 +218,11 @@ export default function ProductDetailScreen() {
           )}
 
           {/* Sizes */}
-          {active.sizes.length > 0 && (
+          {(active.sizes ?? []).length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>SIZE</Text>
               <View style={styles.sizeGrid}>
-                {[...active.sizes]
+                {[...(active.sizes ?? [])]
                   .sort((a, b) => (a.available === b.available ? 0 : a.available ? -1 : 1))
                   .map((s, i) => (
                     <View

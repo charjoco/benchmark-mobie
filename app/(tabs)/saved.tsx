@@ -16,8 +16,13 @@ import { useSelectedProduct } from "@/lib/SelectedProductContext";
 import { API_BASE_URL } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
 import type { ProductRow } from "@/lib/types";
+import type { SavedEntry } from "@/lib/savedProducts";
 
 const theme = getTheme();
+
+type ListItem =
+  | { type: "product"; data: ProductRow }
+  | { type: "removed"; entry: SavedEntry };
 
 export default function SavedScreen() {
   const { savedMap, toggleSaved, toggleWatch, isWatching } = useSaved();
@@ -49,6 +54,21 @@ export default function SavedScreen() {
     loadProducts();
   }, [loadProducts]);
 
+  // Reconcile savedEntries with fetched products. Any entry whose product wasn't
+  // returned by the API (deleted, unpublished, or category-nulled in a backfill)
+  // gets a "removed" row instead of crashing or silently disappearing.
+  const listItems: ListItem[] = useCallback(() => {
+    const foundIds = new Set(products.map((p) => `${p.brand}:${p.externalId}`));
+    const items: ListItem[] = [];
+    for (const p of products) items.push({ type: "product", data: p });
+    for (const e of savedEntries) {
+      if (!foundIds.has(`${e.brand}:${e.externalId}`)) {
+        items.push({ type: "removed", entry: e });
+      }
+    }
+    return items;
+  }, [products, savedEntries])();
+
   function formatPrice(p: number) {
     return `$${p % 1 === 0 ? p.toFixed(0) : p.toFixed(2)}`;
   }
@@ -56,13 +76,39 @@ export default function SavedScreen() {
   const now = Date.now();
   const DAY = 24 * 60 * 60 * 1000;
 
-  const renderItem = useCallback(({ item }: { item: ProductRow }) => {
-    const watching = isWatching(item.brand, item.externalId);
-    const recentPriceDrop = item.priceDroppedAt && (now - new Date(item.priceDroppedAt).getTime()) < DAY;
+  const renderItem = useCallback(({ item }: { item: ListItem }) => {
+    if (item.type === "removed") {
+      const { entry } = item;
+      const brandLabel = entry.brand.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      return (
+        <View style={[styles.item, styles.itemRemoved]}>
+          <View style={styles.imageWrapRemoved}>
+            <Ionicons name="image-outline" size={24} color="#3f3f46" />
+          </View>
+          <View style={styles.info}>
+            <Text style={styles.brand}>{brandLabel.toUpperCase()}</Text>
+            <Text style={styles.removedText}>No longer available</Text>
+          </View>
+          <View style={styles.actions}>
+            <TouchableOpacity
+              onPress={() => toggleSaved(entry.brand, entry.externalId)}
+              style={styles.removeBtn}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={18} color="#52525b" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    const { data: product } = item;
+    const watching = isWatching(product.brand, product.externalId);
+    const recentPriceDrop = product.priceDroppedAt && (now - new Date(product.priceDroppedAt).getTime()) < DAY;
     const hasAlert = watching && recentPriceDrop;
 
     function handleOpenProduct() {
-      setProduct(item);
+      setProduct(product);
       router.push("/product");
     }
 
@@ -74,7 +120,7 @@ export default function SavedScreen() {
           activeOpacity={0.85}
         >
           <Image
-            source={{ uri: item.imageUrl }}
+            source={{ uri: product.imageUrl }}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
             transition={200}
@@ -88,24 +134,24 @@ export default function SavedScreen() {
 
         <View style={styles.info}>
           <Text style={styles.brand} numberOfLines={1}>
-            {item.brand.toUpperCase().replace(/-/g, " ")}
+            {product.brand.toUpperCase().replace(/-/g, " ")}
           </Text>
           <Text style={styles.title} numberOfLines={2}>
-            {item.title}
+            {product.title}
           </Text>
           <View style={styles.priceRow}>
-            <Text style={[styles.price, item.onSale && styles.priceSale]}>
-              {formatPrice(item.price)}
+            <Text style={[styles.price, product.onSale && styles.priceSale]}>
+              {formatPrice(product.price)}
             </Text>
-            {item.onSale && item.compareAtPrice && (
-              <Text style={styles.comparePrice}>{formatPrice(item.compareAtPrice)}</Text>
+            {product.onSale && product.compareAtPrice && (
+              <Text style={styles.comparePrice}>{formatPrice(product.compareAtPrice)}</Text>
             )}
           </View>
         </View>
 
         <View style={styles.actions}>
           <TouchableOpacity
-            onPress={() => toggleWatch(item.brand, item.externalId)}
+            onPress={() => toggleWatch(product.brand, product.externalId)}
             style={[styles.watchBtn, watching && styles.watchBtnActive]}
             hitSlop={8}
           >
@@ -116,7 +162,7 @@ export default function SavedScreen() {
             />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => toggleSaved(item.brand, item.externalId)}
+            onPress={() => toggleSaved(product.brand, product.externalId)}
             style={styles.removeBtn}
             hitSlop={8}
           >
@@ -126,6 +172,8 @@ export default function SavedScreen() {
       </View>
     );
   }, [isWatching, toggleWatch, toggleSaved, setProduct, now]);
+
+  const isEmpty = listItems.length === 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -140,7 +188,7 @@ export default function SavedScreen() {
         <View style={styles.center}>
           <ActivityIndicator color="#71717a" size="large" />
         </View>
-      ) : products.length === 0 ? (
+      ) : isEmpty ? (
         <View style={styles.center}>
           <Ionicons name="heart-outline" size={48} color="#27272a" />
           <Text style={styles.emptyTitle}>Nothing saved yet</Text>
@@ -150,8 +198,12 @@ export default function SavedScreen() {
         </View>
       ) : (
         <FlatList
-          data={products}
-          keyExtractor={(item) => item.id}
+          data={listItems}
+          keyExtractor={(item) =>
+            item.type === "product"
+              ? item.data.id
+              : `removed:${item.entry.brand}:${item.entry.externalId}`
+          }
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -221,12 +273,29 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 12,
   },
+  itemRemoved: {
+    opacity: 0.45,
+  },
   imageWrap: {
     width: IMG_SIZE,
     height: IMG_SIZE,
     borderRadius: 6,
     backgroundColor: "#1c1c1e",
     overflow: "hidden",
+  },
+  imageWrapRemoved: {
+    width: IMG_SIZE,
+    height: IMG_SIZE,
+    borderRadius: 6,
+    backgroundColor: "#18181b",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  removedText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    color: "#52525b",
+    marginTop: 2,
   },
   alertBadge: {
     position: "absolute",
