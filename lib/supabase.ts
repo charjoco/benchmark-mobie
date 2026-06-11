@@ -111,7 +111,16 @@ export async function saveOnboardingPreferences(
   data: OnboardingData
 ): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
   console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} entry | userId=${userId}`);
+
+  // Auth-lock probe: how long does acquiring the session take before the RPC can be dispatched?
+  // If this value is large (>500ms), the Supabase auth lock is holding the RPC hostage.
+  const sessionCheckStart = Date.now();
+  const { data: { session: probeSession } } = await supabase.auth.getSession();
+  const sessionCheckMs = Date.now() - sessionCheckStart;
+  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} getSession probe: ${sessionCheckMs}ms | expires_at=${probeSession?.expires_at ?? "null"}`);
+
   console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} before rpc`);
+  const rpcStart = Date.now();
   const { error } = await withTimeout(
     Promise.resolve(supabase.rpc("save_onboarding_preferences", {
       p_user_id:          userId,
@@ -124,6 +133,7 @@ export async function saveOnboardingPreferences(
     })),
     15000
   );
-  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} after rpc | error=${JSON.stringify(error)}`);
+  const rpcMs = Date.now() - rpcStart;
+  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} after rpc: ${rpcMs}ms | error=${JSON.stringify(error)}`);
   return { error };
 }
