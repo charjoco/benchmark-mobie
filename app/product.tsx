@@ -14,7 +14,7 @@ import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelectedProduct } from "@/lib/SelectedProductContext";
 import { useSaved } from "@/lib/SavedContext";
-import { trackProductView, trackProductTap } from "@/lib/analytics";
+import { trackProductView, trackProductTap, trackProductSaved } from "@/lib/analytics";
 import type { Colorway, Seller } from "@/lib/types";
 
 function formatPrice(p: number | null | undefined) {
@@ -22,17 +22,8 @@ function formatPrice(p: number | null | undefined) {
   return `$${p % 1 === 0 ? p.toFixed(0) : p.toFixed(2)}`;
 }
 
-function openUrl(url: string, brand?: string, title?: string, price?: number) {
-  if (brand && title && price !== undefined) {
-    trackProductTap({ brand, title, price, url });
-  }
-  WebBrowser.openBrowserAsync(url, {
-    presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-  });
-}
-
 export default function ProductDetailScreen() {
-  const { product } = useSelectedProduct();
+  const { product, source, meta } = useSelectedProduct();
   const { isSaved, toggleSaved } = useSaved();
   const { width: screenWidth } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
@@ -44,6 +35,15 @@ export default function ProductDetailScreen() {
     return null;
   }
 
+  function openUrl(url: string, brand?: string, title?: string, price?: number) {
+    if (brand && title && price !== undefined) {
+      trackProductTap({ brand, title, price, url, source, ...meta });
+    }
+    WebBrowser.openBrowserAsync(url, {
+      presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+    });
+  }
+
   useEffect(() => {
     trackProductView({
       brand: product.brand,
@@ -52,6 +52,8 @@ export default function ProductDetailScreen() {
       price: product.price,
       isNew: product.isNew,
       onSale: product.onSale,
+      source,
+      ...meta,
     });
   }, [product.externalId]);
 
@@ -138,7 +140,10 @@ export default function ProductDetailScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.iconBtn}
-                onPress={() => toggleSaved(product.brand, product.externalId)}
+                onPress={() => {
+                  if (!saved) trackProductSaved({ brand: product.brand, title: product.title, source: "product_detail" });
+                  toggleSaved(product.brand, product.externalId);
+                }}
                 activeOpacity={0.8}
               >
                 <Ionicons
@@ -297,6 +302,8 @@ export default function ProductDetailScreen() {
               title: product.title,
               price: displayPrice,
               url: displayUrl,
+              source,
+              ...meta,
             });
             router.push(
               `/handoff?url=${encodeURIComponent(displayUrl)}&brand=${encodeURIComponent(brandLabel)}&title=${encodeURIComponent(product.title)}`

@@ -210,6 +210,7 @@ export default function ShopScreen() {
                         product={product}
                         cardWidth={cardWidth}
                         showBrand={true}
+                        source="feed"
                       />
                     </View>
                   ))}

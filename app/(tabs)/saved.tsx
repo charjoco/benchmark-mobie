@@ -108,7 +108,7 @@ export default function SavedScreen() {
     const hasAlert = watching && recentPriceDrop;
 
     function handleOpenProduct() {
-      setProduct(product);
+      setProduct(product, "saved");
       router.push("/product");
     }
 

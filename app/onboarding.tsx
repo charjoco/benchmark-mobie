@@ -19,6 +19,7 @@ import {
 import { saveOnboardingPreferences, OnboardingData } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 import { getTheme } from "@/lib/theme";
+import { trackOnboardingCompleted } from "@/lib/analytics";
 
 const theme = getTheme();
 const TOTAL_STEPS = 5;
@@ -113,6 +114,12 @@ export default function OnboardingScreen() {
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} calling updatePreferences`);
       updatePreferences({ ...payload, onboarding_complete: true });
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} updatePreferences done — layout will navigate`);
+
+      trackOnboardingCompleted({
+        brands_count: selectedBrands.length,
+        style_lean: styleLean,
+        price_comfort: priceComfort,
+      });
 
       // Persist to Supabase in the background. If all attempts fail, prefs are fetched from
       // Supabase on next open via onAuthStateChange → loadPreferences.

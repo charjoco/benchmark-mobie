@@ -11,7 +11,8 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { APP_COLOR_HEX } from "@/lib/constants";
 import type { ProductRow, Colorway } from "@/lib/types";
-import { useSelectedProduct } from "@/lib/SelectedProductContext";
+import { useSelectedProduct, type ProductMeta } from "@/lib/SelectedProductContext";
+import type { EventSource } from "@/lib/analytics";
 import { useAuth } from "@/lib/AuthContext";
 import { computeBadge } from "@/lib/fitBadge";
 
@@ -19,12 +20,16 @@ interface ProductCardProps {
   product: ProductRow;
   cardWidth?: number;
   showBrand?: boolean;
+  source?: EventSource;
+  meta?: ProductMeta;
 }
 
 export const ProductCard = memo(function ProductCard({
   product,
   cardWidth: propCardWidth,
   showBrand = true,
+  source = "feed",
+  meta = {},
 }: ProductCardProps) {
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = propCardWidth ?? (screenWidth - 16 - 8) / 2;
@@ -59,7 +64,7 @@ export const ProductCard = memo(function ProductCard({
   const displayOnSale = active.onSale ?? product.onSale;
 
   function handleOpenProduct() {
-    setProduct(product);
+    setProduct(product, source, meta);
     router.push("/product");
   }
 

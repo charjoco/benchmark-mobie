@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
 import { BRANDS, ALL_CATEGORIES } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
+import { trackBrandView, trackFilterApplied } from "@/lib/analytics";
 import type { AppCategory, FeedMode, FilterState, ProductRow } from "@/lib/types";
 
 const theme = getTheme();
@@ -36,6 +37,10 @@ export default function BrandScreen() {
   const [feedMode, setFeedMode] = useState<FeedMode | null>("drops");
   const [category, setCategory] = useState<AppCategory | null>(null);
   const [size, setSize] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (brandKey) trackBrandView(brandKey);
+  }, [brandKey]);
 
   const filters = useMemo<FilterState>(
     () => ({
@@ -62,7 +67,7 @@ export default function BrandScreen() {
           index % 2 === 0 ? { paddingRight: 4 } : { paddingLeft: 4 },
         ]}
       >
-        <ProductCard product={item} cardWidth={cardWidth} showBrand={false} />
+        <ProductCard product={item} cardWidth={cardWidth} showBrand={false} source="brand_page" />
       </View>
     ),
     [cardWidth]
@@ -117,7 +122,10 @@ export default function BrandScreen() {
           <TouchableOpacity
             key={m.key}
             style={[styles.modeBtn, feedMode === m.key && styles.modeBtnActive]}
-            onPress={() => setFeedMode(m.key)}
+            onPress={() => {
+              setFeedMode(m.key);
+              trackFilterApplied({ brand: brandKey, feed_mode: m.key, category, size });
+            }}
             activeOpacity={0.7}
           >
             <Text
@@ -141,7 +149,10 @@ export default function BrandScreen() {
       >
         <TouchableOpacity
           style={[styles.catBtn, category === null && styles.catBtnActive]}
-          onPress={() => setCategory(null)}
+          onPress={() => {
+            setCategory(null);
+            trackFilterApplied({ brand: brandKey, feed_mode: feedMode, category: null, size });
+          }}
           activeOpacity={0.7}
         >
           <Text
@@ -157,7 +168,11 @@ export default function BrandScreen() {
           <TouchableOpacity
             key={c.key}
             style={[styles.catBtn, category === c.key && styles.catBtnActive]}
-            onPress={() => setCategory(c.key === category ? null : c.key)}
+            onPress={() => {
+              const newCat = c.key === category ? null : c.key;
+              setCategory(newCat);
+              trackFilterApplied({ brand: brandKey, feed_mode: feedMode, category: newCat, size });
+            }}
             activeOpacity={0.7}
           >
             <Text
@@ -183,7 +198,11 @@ export default function BrandScreen() {
           <TouchableOpacity
             key={s}
             style={[styles.catBtn, size === s && styles.catBtnActive]}
-            onPress={() => setSize(size === s ? null : s)}
+            onPress={() => {
+              const newSize = size === s ? null : s;
+              setSize(newSize);
+              trackFilterApplied({ brand: brandKey, feed_mode: feedMode, category, size: newSize });
+            }}
             activeOpacity={0.7}
           >
             <Text style={[styles.catBtnText, size === s && styles.catBtnTextActive]}>

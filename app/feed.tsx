@@ -15,6 +15,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
 import { useAuth } from "@/lib/AuthContext";
 import { getTheme } from "@/lib/theme";
+import { trackFilterApplied } from "@/lib/analytics";
 import type { FeedMode, FilterState, ProductRow } from "@/lib/types";
 
 const theme = getTheme();
@@ -55,7 +56,7 @@ export default function FeedScreen() {
           index % 2 === 0 ? { paddingRight: 4 } : { paddingLeft: 4 },
         ]}
       >
-        <ProductCard product={item} cardWidth={cardWidth} showBrand={true} />
+        <ProductCard product={item} cardWidth={cardWidth} showBrand={true} source="feed" />
       </View>
     ),
     [cardWidth]
@@ -107,7 +108,10 @@ export default function FeedScreen() {
           <TouchableOpacity
             key={m.key}
             style={[styles.modeBtn, feedMode === m.key && styles.modeBtnActive]}
-            onPress={() => setFeedMode(m.key)}
+            onPress={() => {
+              setFeedMode(m.key);
+              trackFilterApplied({ feed_mode: m.key });
+            }}
             activeOpacity={0.7}
           >
             <Text

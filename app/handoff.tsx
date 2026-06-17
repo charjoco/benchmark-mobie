@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSelectedProduct } from "@/lib/SelectedProductContext";
 import { useSaved } from "@/lib/SavedContext";
+import { trackProductSaved } from "@/lib/analytics";
 
 export default function HandoffScreen() {
   const { url, brand, title } = useLocalSearchParams<{
@@ -21,6 +22,7 @@ export default function HandoffScreen() {
   useEffect(() => {
     // Auto-save the product if not already saved
     if (product && !isSaved(product.brand, product.externalId)) {
+      trackProductSaved({ brand: product.brand, title: product.title, source: "auto_save" });
       toggleSaved(product.brand, product.externalId);
       autoSavedRef.current = true;
     }

@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
 import { ProductCard } from "@/components/ProductCard";
 import { fetchCollection } from "@/lib/api";
+import { trackCollectionView } from "@/lib/analytics";
 import type { CollectionDetail, ProductRow } from "@/lib/types";
 
 export default function CollectionScreen() {
@@ -25,7 +26,10 @@ export default function CollectionScreen() {
   useEffect(() => {
     if (!slug) return;
     fetchCollection(slug)
-      .then(setCollection)
+      .then((c) => {
+        setCollection(c);
+        if (c) trackCollectionView({ collection_id: slug, title: c.name });
+      })
       .catch(console.error)
       .finally(() => setIsLoading(false));
   }, [slug]);
@@ -38,7 +42,7 @@ export default function CollectionScreen() {
           index % 2 === 0 ? { paddingRight: 4 } : { paddingLeft: 4 },
         ]}
       >
-        <ProductCard product={item} cardWidth={cardWidth} />
+        <ProductCard product={item} cardWidth={cardWidth} source="collection" meta={{ collection_id: slug }} />
       </View>
     ),
     [cardWidth]

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
 import { ALL_CATEGORIES } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
+import { trackCategoryView } from "@/lib/analytics";
 import type { AppCategory, FilterState, ProductRow } from "@/lib/types";
 
 const theme = getTheme();
@@ -25,6 +26,10 @@ export default function CategoryScreen() {
 
   const categoryLabel =
     ALL_CATEGORIES.find((c) => c.key === categoryKey)?.label ?? (categoryKey ?? "");
+
+  useEffect(() => {
+    if (categoryKey) trackCategoryView(categoryKey);
+  }, [categoryKey]);
 
   const filters = useMemo<FilterState>(
     () => ({
@@ -51,7 +56,7 @@ export default function CategoryScreen() {
           index % 2 === 0 ? { paddingRight: 4 } : { paddingLeft: 4 },
         ]}
       >
-        <ProductCard product={item} cardWidth={cardWidth} showBrand={true} />
+        <ProductCard product={item} cardWidth={cardWidth} showBrand={true} source="category" />
       </View>
     ),
     [cardWidth]

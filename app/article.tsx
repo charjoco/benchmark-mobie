@@ -14,6 +14,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import RenderHtml from "react-native-render-html";
 import { ProductCard } from "@/components/ProductCard";
 import { fetchArticle } from "@/lib/api";
+import { trackArticleView } from "@/lib/analytics";
 import type { ArticleDetail } from "@/lib/types";
 
 function formatDate(iso: string): string {
@@ -82,7 +83,10 @@ export default function ArticleScreen() {
   useEffect(() => {
     if (!id) return;
     fetchArticle(id)
-      .then(setArticle)
+      .then((article) => {
+        setArticle(article);
+        if (article) trackArticleView({ article_id: id, title: article.title });
+      })
       .catch(console.error)
       .finally(() => setIsLoading(false));
   }, [id]);
@@ -184,7 +188,7 @@ export default function ArticleScreen() {
                       index % 2 === 0 ? { paddingRight: 4 } : { paddingLeft: 4 },
                     ]}
                   >
-                    <ProductCard product={product} cardWidth={cardWidth} />
+                    <ProductCard product={product} cardWidth={cardWidth} source="article" meta={{ article_id: id }} />
                   </View>
                 ))}
               </View>

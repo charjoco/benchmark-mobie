@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Link, router } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import { trackSignUp } from "@/lib/analytics";
 
 export default function SignupScreen() {
   const [email, setEmail] = useState("");
@@ -43,6 +44,7 @@ export default function SignupScreen() {
     if (error) {
       setError(error.message);
     } else {
+      trackSignUp();
       setSuccess(true);
     }
   }
