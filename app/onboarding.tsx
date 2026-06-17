@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -17,12 +16,40 @@ import {
   STYLE_LEAN_OPTIONS,
   PRICE_COMFORT_OPTIONS,
 } from "@/lib/constants";
-import { saveOnboardingPreferences } from "@/lib/supabase";
+import { saveOnboardingPreferences, OnboardingData } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 import { getTheme } from "@/lib/theme";
 
 const theme = getTheme();
 const TOTAL_STEPS = 5;
+
+// Fire-and-forget background save with up to 2 retries (2s then 5s backoff).
+// If all attempts fail, prefs are reloaded from Supabase on the next app open via
+// onAuthStateChange → loadPreferences, so the user is not permanently data-lost.
+function scheduleSave(userId: string, data: OnboardingData, attempt = 0): void {
+  saveOnboardingPreferences(userId, data)
+    .then(({ error }) => {
+      if (!error) {
+        console.log(`[onboarding/scheduleSave] attempt ${attempt + 1} success`);
+        return;
+      }
+      console.warn(`[onboarding/scheduleSave] attempt ${attempt + 1} rpc error | ${JSON.stringify(error)}`);
+      retryScheduleSave(userId, data, attempt);
+    })
+    .catch((err: unknown) => {
+      console.warn(`[onboarding/scheduleSave] attempt ${attempt + 1} threw | ${err instanceof Error ? err.message : String(err)}`);
+      retryScheduleSave(userId, data, attempt);
+    });
+}
+
+function retryScheduleSave(userId: string, data: OnboardingData, attempt: number): void {
+  if (attempt < 2) {
+    const delayMs = attempt === 0 ? 2000 : 5000;
+    setTimeout(() => scheduleSave(userId, data, attempt + 1), delayMs);
+  } else {
+    console.error("[onboarding/scheduleSave] all 3 attempts failed — prefs reload from Supabase on next open");
+  }
+}
 
 export default function OnboardingScreen() {
   const { user, preferences, onboardingComplete, updatePreferences } = useAuth();
@@ -59,13 +86,12 @@ export default function OnboardingScreen() {
     console.log(`[onboarding/handleSkip] ${new Date().toISOString()} exit`);
   }
 
-  async function handleFinish() {
-    console.log(`[onboarding/handleFinish] ${new Date().toISOString()} entry | user=${!!user} topSize=${topSize} bottomSize=${bottomSize} priceComfort=${priceComfort} onboardingComplete=${onboardingComplete}`);
+  function handleFinish() {
+    console.log(`[onboarding/handleFinish] ${new Date().toISOString()} entry | user=${!!user} topSize=${topSize} bottomSize=${bottomSize} priceComfort=${priceComfort}`);
     if (!user || !topSize || !bottomSize || !priceComfort) {
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} early return — missing required fields`);
       return;
     }
-    // Synchronous ref guard prevents double-fire during React's async setState window
     if (savingRef.current) {
       console.log(`[onboarding/handleFinish] ${new Date().toISOString()} early return — savingRef guard`);
       return;
@@ -73,41 +99,24 @@ export default function OnboardingScreen() {
     savingRef.current = true;
     setSaving(true);
     try {
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} before saveOnboardingPreferences`);
-      const { error } = await saveOnboardingPreferences(user.id, {
+      const payload: OnboardingData = {
         preferred_brands: selectedBrands,
         top_size: topSize,
         bottom_size: bottomSize,
         outerwear_size: outerwearSize,
         style_lean: styleLean,
         price_comfort: priceComfort,
-      });
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} after saveOnboardingPreferences | error=${JSON.stringify(error)}`);
+      };
 
-      if (error) {
-        console.log(`[onboarding/handleFinish] ${new Date().toISOString()} throw — rpc error`);
-        throw error;
-      }
+      // Optimistic: update local context immediately so _layout.tsx navigates without waiting on
+      // the network. _layout.tsx guard: session && onboardingComplete && inOnboarding → /(tabs).
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} calling updatePreferences`);
+      updatePreferences({ ...payload, onboarding_complete: true });
+      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} updatePreferences done — layout will navigate`);
 
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} calling updatePreferences directly`);
-      updatePreferences({
-        preferred_brands: selectedBrands,
-        top_size: topSize,
-        bottom_size: bottomSize,
-        outerwear_size: outerwearSize,
-        style_lean: styleLean,
-        price_comfort: priceComfort,
-        onboarding_complete: true,
-      });
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} updatePreferences called`);
-
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} → router.replace("/(tabs)")`);
-      router.replace("/(tabs)");
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} exit`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      console.log(`[onboarding/handleFinish] ${new Date().toISOString()} catch — ${message}`);
-      Alert.alert("Something went wrong", message);
+      // Persist to Supabase in the background. If all attempts fail, prefs are fetched from
+      // Supabase on next open via onAuthStateChange → loadPreferences.
+      scheduleSave(user.id, payload);
     } finally {
       savingRef.current = false;
       setSaving(false);

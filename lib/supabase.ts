@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, processLock } from "@supabase/supabase-js";
 import { APP_COLORS } from "./constants";
 import * as SecureStore from "expo-secure-store";
 import { withTimeout } from "./withTimeout";
@@ -20,6 +20,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
     flowType: "pkce",
+    // processLock serializes auth operations within the JS process — the correct choice for React
+    // Native, where the Web Locks API does not exist. Without an explicit lock, GoTrueClient falls
+    // back to lockNoOp (no serialization), which allows concurrent token-refresh + getSession calls
+    // to race. processLock queues them instead.
+    lock: processLock,
   },
 });
 
@@ -81,16 +86,32 @@ export async function loadPreferences(userId: string): Promise<UserPreferences> 
   return prefs;
 }
 
+type PostgrestResult = { error: import("@supabase/supabase-js").PostgrestError | null };
+
+// Wraps a PostgrestBuilder thenable in a native Promise before handing it to withTimeout.
+// Promise.resolve(customThenable) has a known Hermes bug where Promise.race does not properly
+// forward timer rejections through the derived thenable promise chain, causing withTimeout to
+// never fire on real devices. new Promise + .then(resolve, reject) bypasses this path entirely.
+function toNativePromise(
+  builder: { then: (onFulfilled: (v: any) => void, onRejected: (e: any) => void) => any }
+): Promise<PostgrestResult> {
+  return new Promise<PostgrestResult>((resolve, reject) => {
+    builder.then((result: any) => resolve({ error: result?.error ?? null }), reject);
+  });
+}
+
 export async function savePreferences(
   userId: string,
   prefs: UserPreferences
-): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
+): Promise<PostgrestResult> {
   console.log(`[supabase/savePreferences] ${new Date().toISOString()} entry | userId=${userId} onboarding_complete=${prefs.onboarding_complete}`);
   const { error } = await withTimeout(
-    Promise.resolve(supabase.from("user_preferences").upsert(
-      { user_id: userId, ...prefs, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" }
-    )),
+    toNativePromise(
+      supabase.from("user_preferences").upsert(
+        { user_id: userId, ...prefs, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" }
+      )
+    ),
     8000
   );
   console.log(`[supabase/savePreferences] ${new Date().toISOString()} result | error=${JSON.stringify(error)}`);
@@ -109,31 +130,24 @@ export interface OnboardingData {
 export async function saveOnboardingPreferences(
   userId: string,
   data: OnboardingData
-): Promise<{ error: import("@supabase/supabase-js").PostgrestError | null }> {
+): Promise<PostgrestResult> {
   console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} entry | userId=${userId}`);
-
-  // Auth-lock probe: how long does acquiring the session take before the RPC can be dispatched?
-  // If this value is large (>500ms), the Supabase auth lock is holding the RPC hostage.
-  const sessionCheckStart = Date.now();
-  const { data: { session: probeSession } } = await supabase.auth.getSession();
-  const sessionCheckMs = Date.now() - sessionCheckStart;
-  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} getSession probe: ${sessionCheckMs}ms | expires_at=${probeSession?.expires_at ?? "null"}`);
-
   console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} before rpc`);
   const rpcStart = Date.now();
   const { error } = await withTimeout(
-    Promise.resolve(supabase.rpc("save_onboarding_preferences", {
-      p_user_id:          userId,
-      p_preferred_brands: data.preferred_brands,
-      p_top_size:         data.top_size,
-      p_bottom_size:      data.bottom_size,
-      p_outerwear_size:   data.outerwear_size,
-      p_style_lean:       data.style_lean,
-      p_price_comfort:    data.price_comfort,
-    })),
+    toNativePromise(
+      supabase.rpc("save_onboarding_preferences", {
+        p_user_id:          userId,
+        p_preferred_brands: data.preferred_brands,
+        p_top_size:         data.top_size,
+        p_bottom_size:      data.bottom_size,
+        p_outerwear_size:   data.outerwear_size,
+        p_style_lean:       data.style_lean,
+        p_price_comfort:    data.price_comfort,
+      })
+    ),
     15000
   );
-  const rpcMs = Date.now() - rpcStart;
-  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} after rpc: ${rpcMs}ms | error=${JSON.stringify(error)}`);
+  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} after rpc: ${Date.now() - rpcStart}ms | error=${JSON.stringify(error)}`);
   return { error };
 }
