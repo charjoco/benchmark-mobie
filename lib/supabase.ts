@@ -128,16 +128,14 @@ export interface OnboardingData {
 }
 
 export async function saveOnboardingPreferences(
-  userId: string,
   data: OnboardingData
 ): Promise<PostgrestResult> {
-  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} entry | userId=${userId}`);
+  console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} entry`);
   console.log(`[supabase/saveOnboardingPreferences] ${new Date().toISOString()} before rpc`);
   const rpcStart = Date.now();
   const { error } = await withTimeout(
     toNativePromise(
       supabase.rpc("save_onboarding_preferences", {
-        p_user_id:          userId,
         p_preferred_brands: data.preferred_brands,
         p_top_size:         data.top_size,
         p_bottom_size:      data.bottom_size,

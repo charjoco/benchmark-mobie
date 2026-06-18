@@ -27,26 +27,26 @@ const TOTAL_STEPS = 5;
 // Fire-and-forget background save with up to 2 retries (2s then 5s backoff).
 // If all attempts fail, prefs are reloaded from Supabase on the next app open via
 // onAuthStateChange → loadPreferences, so the user is not permanently data-lost.
-function scheduleSave(userId: string, data: OnboardingData, attempt = 0): void {
-  saveOnboardingPreferences(userId, data)
+function scheduleSave(data: OnboardingData, attempt = 0): void {
+  saveOnboardingPreferences(data)
     .then(({ error }) => {
       if (!error) {
         console.log(`[onboarding/scheduleSave] attempt ${attempt + 1} success`);
         return;
       }
       console.warn(`[onboarding/scheduleSave] attempt ${attempt + 1} rpc error | ${JSON.stringify(error)}`);
-      retryScheduleSave(userId, data, attempt);
+      retryScheduleSave(data, attempt);
     })
     .catch((err: unknown) => {
       console.warn(`[onboarding/scheduleSave] attempt ${attempt + 1} threw | ${err instanceof Error ? err.message : String(err)}`);
-      retryScheduleSave(userId, data, attempt);
+      retryScheduleSave(data, attempt);
     });
 }
 
-function retryScheduleSave(userId: string, data: OnboardingData, attempt: number): void {
+function retryScheduleSave(data: OnboardingData, attempt: number): void {
   if (attempt < 2) {
     const delayMs = attempt === 0 ? 2000 : 5000;
-    setTimeout(() => scheduleSave(userId, data, attempt + 1), delayMs);
+    setTimeout(() => scheduleSave(data, attempt + 1), delayMs);
   } else {
     console.error("[onboarding/scheduleSave] all 3 attempts failed — prefs reload from Supabase on next open");
   }
@@ -123,7 +123,7 @@ export default function OnboardingScreen() {
 
       // Persist to Supabase in the background. If all attempts fail, prefs are fetched from
       // Supabase on next open via onAuthStateChange → loadPreferences.
-      scheduleSave(user.id, payload);
+      scheduleSave(payload);
     } finally {
       savingRef.current = false;
       setSaving(false);
