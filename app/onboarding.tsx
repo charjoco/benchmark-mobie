@@ -132,11 +132,9 @@ export default function OnboardingScreen() {
 
   // ── Step 0 — Brands ──────────────────────────────────────────────────────
   function toggleBrand(key: string) {
-    setSelectedBrands((prev) => {
-      if (prev.includes(key)) return prev.filter((b) => b !== key);
-      if (prev.length >= 5) return prev;
-      return [...prev, key];
-    });
+    setSelectedBrands((prev) =>
+      prev.includes(key) ? prev.filter((b) => b !== key) : [...prev, key]
+    );
   }
 
   // ── Step 2 — Style lean ──────────────────────────────────────────────────
@@ -191,18 +189,15 @@ export default function OnboardingScreen() {
         {step === 0 && (
           <>
             <Text style={styles.question}>Which brands do you already wear or follow?</Text>
-            <Text style={styles.hint}>Choose up to 5.</Text>
             <View style={styles.brandGrid}>
               {BRANDS.map((brand) => {
                 const selected = selectedBrands.includes(brand.key);
-                const atMax = selectedBrands.length >= 5 && !selected;
                 return (
                   <TouchableOpacity
                     key={brand.key}
                     style={[
                       styles.brandTile,
                       selected && styles.brandTileSelected,
-                      atMax && styles.brandTileDim,
                     ]}
                     onPress={() => toggleBrand(brand.key)}
                     activeOpacity={0.7}
@@ -452,9 +447,6 @@ const styles = StyleSheet.create({
   brandTileSelected: {
     borderColor: "#f4f4f5",
     backgroundColor: "#f4f4f5",
-  },
-  brandTileDim: {
-    opacity: 0.4,
   },
   brandTileText: {
     fontFamily: "Inter_600SemiBold",
