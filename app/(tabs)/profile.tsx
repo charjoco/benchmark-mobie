@@ -12,16 +12,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/AuthContext";
 import { savePreferences, UserPreferences } from "@/lib/supabase";
-import { BRANDS, SIZES, APP_COLORS, APP_COLOR_HEX } from "@/lib/constants";
+import { BRANDS, SIZES, APP_COLORS, APP_COLOR_HEX, API_BASE_URL } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
 
 const theme = getTheme();
 
 export default function ProfileScreen() {
-  const { user, preferences, signOut, updatePreferences } = useAuth();
+  const { session, user, preferences, signOut, updatePreferences } = useAuth();
   const [draft, setDraft] = useState<UserPreferences>(preferences);
   const [saving, setSaving] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function toggleBrand(key: string) {
     setDraft((d) => ({
@@ -82,6 +83,40 @@ export default function ProfileScreen() {
   async function handleSignOut() {
     setSigningOut(true);
     await signOut();
+  }
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      "Delete Account",
+      "This will permanently delete your account, all saved preferences, and all saved items. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete Account",
+          style: "destructive",
+          onPress: async () => {
+            if (!session?.access_token) return;
+            setDeleting(true);
+            try {
+              const res = await fetch(`${API_BASE_URL}/api/user/delete`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${session.access_token}` },
+              });
+              if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error((body as { error?: string }).error ?? "Deletion failed");
+              }
+              // signOut clears local tokens; onAuthStateChange fires → _layout navigates to auth
+              await signOut();
+            } catch (err) {
+              setDeleting(false);
+              const msg = err instanceof Error ? err.message : "Something went wrong.";
+              Alert.alert("Error", `${msg} Your account has not been deleted.`);
+            }
+          },
+        },
+      ]
+    );
   }
 
   return (
@@ -233,6 +268,19 @@ export default function ProfileScreen() {
             <ActivityIndicator color="#f87171" />
           ) : (
             <Text style={styles.signOutText}>Sign out</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Delete account */}
+        <TouchableOpacity
+          style={[styles.deleteAccountBtn, deleting && styles.btnDisabled]}
+          onPress={handleDeleteAccount}
+          disabled={deleting}
+        >
+          {deleting ? (
+            <ActivityIndicator color="#7f1d1d" />
+          ) : (
+            <Text style={styles.deleteAccountText}>Delete Account</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -451,5 +499,17 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     fontSize: 14,
     color: "#71717a",
+  },
+  deleteAccountBtn: {
+    marginHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 8,
+    paddingVertical: 15,
+    alignItems: "center",
+  },
+  deleteAccountText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: "#7f1d1d",
   },
 });
