@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import { router } from "expo-router";
 import { ALL_CATEGORIES } from "@/lib/constants";
 import { fetchCategories } from "@/lib/api";
 import { getTheme } from "@/lib/theme";
+import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import type { CategoryCount } from "@/lib/types";
 
 const theme = getTheme();
@@ -19,14 +21,23 @@ const theme = getTheme();
 export default function CategoriesScreen() {
   const [categoryCounts, setCategoryCounts] = useState<CategoryCount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isError, setIsError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setIsLoading(true);
+    setIsError(false);
     fetchCategories()
       .then((data) => setCategoryCounts(data.categories))
-      .catch((e: Error) => setError(e.message))
+      .catch((e) => {
+        console.error("[categories] fetch error:", e);
+        setIsError(true);
+      })
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const countMap = new Map(categoryCounts.map((c) => [c.category, c.count]));
   const visibleCategories = ALL_CATEGORIES.filter((c) => (countMap.get(c.key) ?? 0) > 0);
@@ -51,10 +62,10 @@ export default function CategoriesScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator color="#71717a" size="large" />
         </View>
-      ) : error ? (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>Failed to load categories</Text>
-        </View>
+      ) : isError ? (
+        <ErrorState onRetry={load} />
+      ) : visibleCategories.length === 0 ? (
+        <EmptyState title="No categories yet." subtitle="Check back soon." />
       ) : (
         <ScrollView
           contentContainerStyle={styles.grid}

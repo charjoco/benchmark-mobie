@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSaved } from "@/lib/SavedContext";
 import { useSelectedProduct } from "@/lib/SelectedProductContext";
+import { ErrorState } from "@/components/ErrorState";
 import { API_BASE_URL } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
 import type { ProductRow } from "@/lib/types";
@@ -29,22 +30,29 @@ export default function SavedScreen() {
   const { setProduct } = useSelectedProduct();
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   const savedEntries = Array.from(savedMap.values());
 
   const loadProducts = useCallback(async () => {
     if (savedEntries.length === 0) {
       setProducts([]);
+      setIsError(false);
       return;
     }
     setIsLoading(true);
+    setIsError(false);
     try {
       const ids = savedEntries.map((e) => `${e.brand}:${e.externalId}`).join(",");
       const res = await fetch(`${API_BASE_URL}/api/products/saved?ids=${encodeURIComponent(ids)}`);
+      if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       setProducts(data.products ?? []);
     } catch (err) {
       console.error("[Saved] fetch error:", err);
+      // Don't render every saved item as "No longer available" on a load failure —
+      // surface a retry instead so the list reflects reality once it recovers.
+      setIsError(true);
     } finally {
       setIsLoading(false);
     }
@@ -188,6 +196,8 @@ export default function SavedScreen() {
         <View style={styles.center}>
           <ActivityIndicator color="#71717a" size="large" />
         </View>
+      ) : isError ? (
+        <ErrorState onRetry={loadProducts} />
       ) : isEmpty ? (
         <View style={styles.center}>
           <Ionicons name="heart-outline" size={48} color="#27272a" />

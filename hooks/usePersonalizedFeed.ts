@@ -77,25 +77,31 @@ function sortAndTrim(products: ProductRow[], prefs: UserPreferences): ProductRow
 interface PersonalizedFeedResult {
   products: ProductRow[];
   isLoading: boolean;
+  isError: boolean;
   isFallback: boolean;
   fallbackBrandLabel: string;
+  reload: () => void;
 }
 
 export function usePersonalizedFeed(prefs: UserPreferences): PersonalizedFeedResult {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
   const [fallbackBrandLabel, setFallbackBrandLabel] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!prefs.onboarding_complete || prefs.preferred_brands.length === 0) {
       setProducts([]);
       setIsLoading(false);
+      setIsError(false);
       return;
     }
 
     let cancelled = false;
     setIsLoading(true);
+    setIsError(false);
     setIsFallback(false);
 
     async function load() {
@@ -146,7 +152,10 @@ export function usePersonalizedFeed(prefs: UserPreferences): PersonalizedFeedRes
           setProducts(fallback.products.slice(0, 6));
         }
       } catch (err) {
-        if (!cancelled) console.error("[usePersonalizedFeed]", err);
+        if (!cancelled) {
+          console.error("[usePersonalizedFeed]", err);
+          setIsError(true);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -155,6 +164,7 @@ export function usePersonalizedFeed(prefs: UserPreferences): PersonalizedFeedRes
     load();
     return () => { cancelled = true; };
   }, [
+    reloadKey,
     prefs.onboarding_complete,
     // Use a stable JSON key for the array fields so the effect only re-runs
     // when the actual values change, not on every render.
@@ -168,5 +178,7 @@ export function usePersonalizedFeed(prefs: UserPreferences): PersonalizedFeedRes
     JSON.stringify(prefs.style_lean),
   ]);
 
-  return { products, isLoading, isFallback, fallbackBrandLabel };
+  const reload = () => setReloadKey((k) => k + 1);
+
+  return { products, isLoading, isError, isFallback, fallbackBrandLabel, reload };
 }

@@ -19,19 +19,23 @@ export async function fetchSavedEntries(userId: string): Promise<SavedEntry[]> {
   }));
 }
 
-export async function addSavedEntry(userId: string, brand: string, externalId: string): Promise<void> {
-  await supabase.from("saved_products").upsert(
+type WriteResult = { error: unknown | null };
+
+export async function addSavedEntry(userId: string, brand: string, externalId: string): Promise<WriteResult> {
+  const { error } = await supabase.from("saved_products").upsert(
     { user_id: userId, brand, external_id: externalId, is_watching: false },
     { onConflict: "user_id,brand,external_id" }
   );
+  return { error };
 }
 
-export async function removeSavedEntry(userId: string, brand: string, externalId: string): Promise<void> {
-  await supabase.from("saved_products")
+export async function removeSavedEntry(userId: string, brand: string, externalId: string): Promise<WriteResult> {
+  const { error } = await supabase.from("saved_products")
     .delete()
     .eq("user_id", userId)
     .eq("brand", brand)
     .eq("external_id", externalId);
+  return { error };
 }
 
 export async function setWatchingEntry(
@@ -39,10 +43,11 @@ export async function setWatchingEntry(
   brand: string,
   externalId: string,
   isWatching: boolean
-): Promise<void> {
-  await supabase.from("saved_products")
+): Promise<WriteResult> {
+  const { error } = await supabase.from("saved_products")
     .update({ is_watching: isWatching })
     .eq("user_id", userId)
     .eq("brand", brand)
     .eq("external_id", externalId);
+  return { error };
 }

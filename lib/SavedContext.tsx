@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useAuth } from "./AuthContext";
+import { useToast } from "./ToastContext";
 import {
   fetchSavedEntries,
   addSavedEntry,
@@ -34,6 +35,7 @@ function makeKey(brand: string, externalId: string) {
 
 export function SavedProvider({ children }: { children: React.ReactNode }) {
   const { session, isGuest } = useAuth();
+  const { notify } = useToast();
   const [savedMap, setSavedMap] = useState<SavedMap>(new Map());
 
   // Load from Supabase on auth
@@ -59,38 +61,89 @@ export function SavedProvider({ children }: { children: React.ReactNode }) {
     [savedMap]
   );
 
+  // Optimistic update with confirmed-write reconciliation: the heart flips
+  // immediately for responsiveness, but if the persisted write fails we revert
+  // the optimistic change and surface a brief, non-blocking error. This keeps the
+  // in-memory map consistent with what actually persisted, so a kill/reopen (which
+  // reloads from Supabase, above) never shows a phantom save.
   const toggleSaved = useCallback(
     (brand: string, externalId: string) => {
       const key = makeKey(brand, externalId);
+      const prevEntry = savedMap.get(key);
+      const wasSaved = !!prevEntry;
+
       setSavedMap((prev) => {
         const next = new Map(prev);
-        if (next.has(key)) {
-          next.delete(key);
-          if (session?.user) removeSavedEntry(session.user.id, brand, externalId);
-        } else {
-          next.set(key, { brand, externalId, isWatching: false });
-          if (session?.user) addSavedEntry(session.user.id, brand, externalId);
-        }
+        if (wasSaved) next.delete(key);
+        else next.set(key, { brand, externalId, isWatching: false });
         return next;
       });
+
+      // Guests have no persistence layer — local-only, nothing to confirm.
+      if (!session?.user) return;
+      const userId = session.user.id;
+      const write = wasSaved
+        ? removeSavedEntry(userId, brand, externalId)
+        : addSavedEntry(userId, brand, externalId);
+
+      write
+        .then(({ error }) => {
+          if (!error) return;
+          // Revert to the pre-toggle state.
+          setSavedMap((prev) => {
+            const next = new Map(prev);
+            if (wasSaved && prevEntry) next.set(key, prevEntry);
+            else next.delete(key);
+            return next;
+          });
+          notify("Couldn't save — try again");
+        })
+        .catch(() => {
+          setSavedMap((prev) => {
+            const next = new Map(prev);
+            if (wasSaved && prevEntry) next.set(key, prevEntry);
+            else next.delete(key);
+            return next;
+          });
+          notify("Couldn't save — try again");
+        });
     },
-    [session?.user?.id]
+    [savedMap, session?.user?.id, notify]
   );
 
   const toggleWatch = useCallback(
     (brand: string, externalId: string) => {
       const key = makeKey(brand, externalId);
+      const existing = savedMap.get(key);
+      if (!existing) return;
+      const newWatching = !existing.isWatching;
+
       setSavedMap((prev) => {
-        const existing = prev.get(key);
-        if (!existing) return prev;
+        const cur = prev.get(key);
+        if (!cur) return prev;
         const next = new Map(prev);
-        const newWatching = !existing.isWatching;
-        next.set(key, { ...existing, isWatching: newWatching });
-        if (session?.user) setWatchingEntry(session.user.id, brand, externalId, newWatching);
+        next.set(key, { ...cur, isWatching: newWatching });
         return next;
       });
+
+      if (!session?.user) return;
+      const revert = () => {
+        setSavedMap((prev) => {
+          const cur = prev.get(key);
+          if (!cur) return prev;
+          const next = new Map(prev);
+          next.set(key, { ...cur, isWatching: existing.isWatching });
+          return next;
+        });
+        notify("Couldn't update — try again");
+      };
+      setWatchingEntry(session.user.id, brand, externalId, newWatching)
+        .then(({ error }) => {
+          if (error) revert();
+        })
+        .catch(revert);
     },
-    [session?.user?.id]
+    [savedMap, session?.user?.id, notify]
   );
 
   return (

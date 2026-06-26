@@ -16,6 +16,7 @@ import {
   CormorantGaramond_600SemiBold,
 } from "@expo-google-fonts/cormorant-garamond";
 import { AuthProvider, useAuth } from "@/lib/AuthContext";
+import { ToastProvider } from "@/lib/ToastContext";
 import { SavedProvider } from "@/lib/SavedContext";
 import { SelectedProductProvider } from "@/lib/SelectedProductContext";
 import { useAuthDeepLink } from "@/lib/useAuthDeepLink";
@@ -84,11 +85,13 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <AuthProvider>
-            <SavedProvider>
-              <SelectedProductProvider>
-                <RootNavigator />
-              </SelectedProductProvider>
-            </SavedProvider>
+            <ToastProvider>
+              <SavedProvider>
+                <SelectedProductProvider>
+                  <RootNavigator />
+                </SelectedProductProvider>
+              </SavedProvider>
+            </ToastProvider>
           </AuthProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>

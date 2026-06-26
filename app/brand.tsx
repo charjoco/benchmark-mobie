@@ -12,6 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
 import { ProductCard } from "@/components/ProductCard";
+import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { useProducts } from "@/hooks/useProducts";
 import { BRANDS, ALL_CATEGORIES } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
@@ -56,7 +58,7 @@ export default function BrandScreen() {
     [category, feedMode, brandKey, size]
   );
 
-  const { products, isLoading, isLoadingMore, hasMore, loadMore, refresh } =
+  const { products, isLoading, isLoadingMore, isError, hasMore, loadMore, refresh } =
     useProducts(filters);
 
   const renderItem = useCallback(
@@ -84,15 +86,14 @@ export default function BrandScreen() {
 
   const renderEmpty = useCallback(() => {
     if (isLoading) return null;
+    if (isError) return <ErrorState onRetry={refresh} />;
     return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>No products found</Text>
-        <Text style={styles.emptySubtext}>
-          Try a different category or check back after the next scrape.
-        </Text>
-      </View>
+      <EmptyState
+        title="Nothing here right now."
+        subtitle="Try a different category, or check back soon for new drops."
+      />
     );
-  }, [isLoading]);
+  }, [isLoading, isError, refresh]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>

@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useAuth } from "@/lib/AuthContext";
 import { savePreferences, UserPreferences } from "@/lib/supabase";
+import { deleteAccountErrorMessage } from "@/lib/errors";
 import { BRANDS, SIZES, APP_COLORS, APP_COLOR_HEX, API_BASE_URL } from "@/lib/constants";
 import { getTheme } from "@/lib/theme";
 
@@ -110,8 +111,8 @@ export default function ProfileScreen() {
               await signOut();
             } catch (err) {
               setDeleting(false);
-              const msg = err instanceof Error ? err.message : "Something went wrong.";
-              Alert.alert("Error", `${msg} Your account has not been deleted.`);
+              // Friendly copy — never surface a raw "Network request failed".
+              Alert.alert("Couldn't delete account", deleteAccountErrorMessage(err));
             }
           },
         },

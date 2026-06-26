@@ -13,6 +13,7 @@ import {
 import { Link, router } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { trackSignUp } from "@/lib/analytics";
+import { signupErrorMessage } from "@/lib/errors";
 
 export default function SignupScreen() {
   const [email, setEmail] = useState("");
@@ -38,14 +39,22 @@ export default function SignupScreen() {
 
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     setLoading(false);
 
     if (error) {
-      setError(error.message);
+      // Friendly copy: distinguish "already registered" / network / generic —
+      // never surface the raw Supabase message.
+      setError(signupErrorMessage(error));
     } else {
       trackSignUp();
-      setSuccess(true);
+      // With "Confirm email" OFF, signUp returns a live session immediately —
+      // let RootNavigator (_layout.tsx) route to onboarding; showing the success
+      // screen here would only flash before the layout replaces it.
+      // Only show "Check your email" when there is no session (confirmation ON).
+      if (!data.session) {
+        setSuccess(true);
+      }
     }
   }
 

@@ -62,8 +62,14 @@ export default function ShopScreen() {
     [allCollections]
   );
 
-  const { products: personalizedProducts, isLoading: personalizedLoading, isFallback, fallbackBrandLabel } =
-    usePersonalizedFeed(preferences);
+  const {
+    products: personalizedProducts,
+    isLoading: personalizedLoading,
+    isError: personalizedError,
+    isFallback,
+    fallbackBrandLabel,
+    reload: reloadPersonalized,
+  } = usePersonalizedFeed(preferences);
 
   const showPersonalized = !isGuest && preferences.onboarding_complete;
 
@@ -187,6 +193,26 @@ export default function ShopScreen() {
             ) : personalizedLoading ? (
               <View style={styles.sectionLoading}>
                 <ActivityIndicator color="#71717a" size="large" />
+              </View>
+            ) : personalizedError ? (
+              /* Load failed — friendly copy + retry */
+              <View style={styles.sectionNotice}>
+                <Text style={styles.sectionNoticeText}>
+                  Couldn't load your feed — check your connection.
+                </Text>
+                <TouchableOpacity onPress={reloadPersonalized} activeOpacity={0.7}>
+                  <Text style={styles.sectionNoticeCta}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : personalizedProducts.length === 0 ? (
+              /* Legitimately empty — read as designed, not broken */
+              <View style={styles.sectionNotice}>
+                <Text style={styles.sectionNoticeText}>
+                  Nothing new from your brands right now — check back soon.
+                </Text>
+                <TouchableOpacity onPress={() => router.push("/feed")} activeOpacity={0.7}>
+                  <Text style={styles.sectionNoticeCta}>Browse all new arrivals →</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               <>
@@ -391,6 +417,29 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#52525b",
     lineHeight: 18,
+  },
+  sectionNotice: {
+    paddingVertical: 20,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#27272a",
+    backgroundColor: "rgba(17,17,19,0.6)",
+    alignItems: "center",
+    gap: 8,
+  },
+  sectionNoticeText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 13,
+    color: "#71717a",
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  sectionNoticeCta: {
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 12,
+    letterSpacing: 0.5,
+    color: "#a1a1aa",
   },
   productGrid: {
     flexDirection: "row",

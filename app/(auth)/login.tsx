@@ -12,6 +12,7 @@ import {
 import { Link } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
+import { loginErrorMessage } from "@/lib/errors";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -30,7 +31,9 @@ export default function LoginScreen() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      // Distinguish bad credentials from network failure — never show the raw
+      // Supabase message (e.g. "Network request failed").
+      setError(loginErrorMessage(error));
     }
   }
 

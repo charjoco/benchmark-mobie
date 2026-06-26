@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { BRANDS, ALL_CATEGORIES } from "@/lib/constants";
 import { fetchBrandCategories } from "@/lib/api";
 import { getTheme } from "@/lib/theme";
+import { ErrorState } from "@/components/ErrorState";
 import type { BrandCategoryCount } from "@/lib/types";
 
 const theme = getTheme();
@@ -23,19 +24,27 @@ export default function BrandCategoriesScreen() {
   const [total, setTotal] = useState<number>(0);
   const [categoryCounts, setCategoryCounts] = useState<BrandCategoryCount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isError, setIsError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!brandKey) return;
     setIsLoading(true);
+    setIsError(false);
     fetchBrandCategories(brandKey)
       .then((data) => {
         setTotal(data.total);
         setCategoryCounts(data.categories);
       })
-      .catch((e: Error) => setError(e.message))
+      .catch((e) => {
+        console.error("[brand-categories] fetch error:", e);
+        setIsError(true);
+      })
       .finally(() => setIsLoading(false));
   }, [brandKey]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const countMap = new Map(categoryCounts.map((c) => [c.category, c.count]));
 
@@ -62,10 +71,8 @@ export default function BrandCategoriesScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator color="#71717a" size="large" />
         </View>
-      ) : error ? (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>Failed to load categories</Text>
-        </View>
+      ) : isError ? (
+        <ErrorState onRetry={load} />
       ) : (
         <ScrollView
           contentContainerStyle={styles.grid}
