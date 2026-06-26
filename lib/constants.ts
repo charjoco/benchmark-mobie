@@ -59,6 +59,7 @@ export const BRANDS: { key: string; label: string }[] = [
   { key: "travis-mathew", label: "TravisMathew" },
   { key: "greyson", label: "Greyson" },
   { key: "johnnie-o", label: "Johnnie-O" },
+  { key: "alo", label: "Alo Yoga" },
 ];
 
 export const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
